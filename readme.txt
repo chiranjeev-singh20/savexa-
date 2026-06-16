@@ -1,0 +1,6 @@
+# Web Framework and Server
+Django>=4.2.0
+gunicorn==20.1.0
+requests==2.31.0
+
+
