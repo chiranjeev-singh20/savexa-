@@ -1,0 +1,300 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AidSense AI — Real-Time Injury Detection & First Aid</title>
+  <meta name="description" content="AidSense AI: Real-time injury detection powered by on-device ML classifier and Claude AI. Voice-guided first aid, emergency SOS, and GPS hospital finder. Free, no API key required.">
+  <!-- External libs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- App styles -->
+  <link rel="stylesheet" href="{% static 'core/css/styles.css' %}">
+</head>
+<body>
+
+<!-- ── Particle background ── -->
+<canvas id="bgc"></canvas>
+
+<!-- ── Notification toast ── -->
+<div class="notif" id="notif"></div>
+
+<div class="app">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <nav class="sb">
+    <div class="logo">AS</div>
+    <div class="ni on" id="ni-home" onclick="goTab('home',this)">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Home
+    </div>
+    <div class="ni" id="ni-scan" onclick="goTab('scan',this)">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Scan
+    </div>
+    <div class="ni" id="ni-aid" onclick="goTab('aid',this)">
+      <svg viewBox="0 0 24 24"><path d="M12 6v6m0 0v6m0-6h6m-6 0H6"/><rect x="3" y="3" width="18" height="18" rx="3"/></svg>Aid
+    </div>
+    <div class="ni" id="ni-chat" onclick="goTab('chat',this)">
+      <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4m-4 0h8"/></svg>Voice
+    </div>
+    <div class="sep"></div>
+    <div class="ni" id="ni-sos" onclick="goTab('sos',this)">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v4m0 4h.01"/></svg>SOS
+    </div>
+    <div class="ni" id="ni-stats" onclick="goTab('stats',this)">
+      <svg viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>Stats
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <!-- ═══ HOME ═══ -->
+    <div id="tab-home" class="tab on">
+      <div class="hero">
+        <div class="hero-badge">⚡ Free AI · No API Key Required</div>
+        <h2>AidSense AI</h2>
+        <p>Real-time injury detection powered by an on-device ML classifier + Claude AI. Voice-guided first aid. Emergency SOS. All free.</p>
+        <button class="scan-cta" onclick="goTab('scan',document.getElementById('ni-scan'))">
+          <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21"/></svg>
+          START SCANNING NOW
+        </button>
+        <div class="feat-grid">
+          <div class="fc" onclick="goTab('scan',document.getElementById('ni-scan'))">
+            <div class="fc-tag" style="background:rgba(0,212,255,.1);color:var(--p)">ML+AI</div>
+            <div class="fc-icon">🔬</div><h3>Real-Time Injury Detection</h3>
+            <p>On-device ML classifier (trained on 100 injury profiles) + Claude Vision for instant wound analysis.</p>
+          </div>
+          <div class="fc" onclick="goTab('aid',document.getElementById('ni-aid'))">
+            <div class="fc-tag" style="background:rgba(0,214,143,.1);color:var(--suc)">VOICE</div>
+            <div class="fc-icon">🩹</div><h3>Voice First Aid Guide</h3>
+            <p>Step-by-step spoken instructions via free browser Speech API. Play, pause, replay any step.</p>
+          </div>
+          <div class="fc" onclick="goTab('chat',document.getElementById('ni-chat'))">
+            <div class="fc-tag" style="background:rgba(124,58,237,.1);color:var(--sec)">FREE LLM</div>
+            <div class="fc-icon">🎙️</div><h3>AI Voice Assistant</h3>
+            <p>Speak your question — AI listens via Web Speech API and responds with Claude + offline fallback.</p>
+          </div>
+          <div class="fc" onclick="goTab('sos',document.getElementById('ni-sos'))">
+            <div class="fc-tag" style="background:rgba(255,71,87,.1);color:var(--dan)">SOS</div>
+            <div class="fc-icon">🚨</div><h3>Emergency Response</h3>
+            <p>One-tap SOS, GPS hospital locator, and direct emergency number dialing (India: 108/112).</p>
+          </div>
+        </div>
+        <div class="sr">
+          <div class="ss"><span class="sd"></span>ML Model Loaded</div>
+          <div class="ss"><span class="sd"></span>Voice Engine Ready</div>
+          <div class="ss"><span class="sd"></span>Emergency Lines Active</div>
+          <div class="ss" id="llmStatus"><span class="sd" style="background:var(--warn)"></span>AI Standby</div>
+        </div>
+      </div>
+      <div id="homeRecent" style="display:none;margin-top:4px">
+        <div class="ct" style="margin-bottom:8px"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Last Scan Result</div>
+        <div id="homeRecentContent"></div>
+      </div>
+    </div>
+
+    <!-- ═══ SCAN ═══ -->
+    <div id="tab-scan" class="tab">
+      <div class="ph">
+        <h1>🔬 Real-Time Scanner</h1>
+        <span class="lbadge" id="scanBadge">● STANDBY</span>
+      </div>
+      <div class="g2" style="align-items:start">
+        <div>
+          <div class="card" style="margin-bottom:12px">
+            <div class="ct"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>Camera Feed</div>
+            <div class="scanbox" id="scanbox">
+              <div class="ph-box" id="camph">
+                <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                <p>Click "Start Camera" to begin</p>
+              </div>
+              <video id="vid" autoplay playsinline style="display:none;width:100%;height:100%;object-fit:cover"></video>
+              <div class="scan-oi" id="oi" style="display:none">
+                <div class="corner tl"></div><div class="corner tr"></div>
+                <div class="corner bl"></div><div class="corner br"></div>
+                <div class="sline" id="sline"></div>
+                <div class="ml-tag" id="mlTag"></div>
+              </div>
+            </div>
+            <div class="tw" id="tw"><span id="tlabel">Next scan in 8s</span><div class="tbar"><div class="tf" id="tf" style="width:100%"></div></div></div>
+            <div class="brow">
+              <button class="btn bp" onclick="startCam()" id="camBtn"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21"/></svg>Start Camera</button>
+              <button class="btn bw" onclick="toggleTrack()" id="trackBtn" disabled><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>Start Tracking</button>
+              <button class="btn bo" onclick="analyzeNow()" id="anaBtn" disabled><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>Analyze Now</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="ct"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Upload Image</div>
+            <div class="uarea" onclick="document.getElementById('imgFile').click()">
+              <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              <p>Click to upload injury photo</p><p style="font-size:9px;margin-top:2px;color:var(--td)">JPG, PNG, WEBP</p>
+            </div>
+            <input type="file" id="imgFile" accept="image/*" style="display:none" onchange="loadUpload(event)">
+            <img id="upImg" style="display:none;width:100%;border-radius:9px;margin-top:9px;max-height:160px;object-fit:cover">
+          </div>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:12px">
+            <div class="ct"><svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>AI Analysis</div>
+            <div id="anaArea"><div class="noinj"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><p>Start camera &amp; tracking, or upload an image</p></div></div>
+          </div>
+          <div class="card" id="stepsCard" style="display:none">
+            <div class="ct"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>First Aid Steps</div>
+            <div id="stepsPreview"></div>
+            <div class="brow"><button class="btn bs" onclick="goToAid()"><svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/></svg>Voice Guide</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ FIRST AID ═══ -->
+    <div id="tab-aid" class="tab">
+      <div class="ph"><h1>🩹 Voice First Aid</h1><span class="lbadge">● VOICE READY</span></div>
+      <div class="g2" style="align-items:start">
+        <div>
+          <div class="card" style="margin-bottom:12px">
+            <div class="ct"><svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4m-4 0h8"/></svg>Voice Controls</div>
+            <canvas id="wvc"></canvas>
+            <div class="brow" style="justify-content:center;margin-top:10px">
+              <button class="btn bp" id="vPlay" onclick="vPlay()"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21"/></svg>Play</button>
+              <button class="btn bo" id="vPause" onclick="vPause()" disabled><svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>Pause</button>
+              <button class="btn bo" id="vStop" onclick="vStop()" disabled><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18"/></svg>Stop</button>
+              <button class="btn bo" onclick="vReplay()"><svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>Replay</button>
+              <button class="btn bo" id="vNext" onclick="vNext()" disabled><svg viewBox="0 0 24 24"><polygon points="5 4 15 12 5 20"/><line x1="19" y1="5" x2="19" y2="19"/></svg>Next</button>
+            </div>
+            <div id="vstatus" style="text-align:center;font-size:10px;color:var(--td);margin-top:7px">Analyze an injury first</div>
+          </div>
+          <div class="card">
+            <div class="ct"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Injury Info</div>
+            <div id="aidInfo" style="font-size:11px;color:var(--td)">No injury scanned yet. Use the Scan tab.</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ct"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/></svg>Steps</div>
+          <div id="stepsList"><div class="noinj"><p>Steps appear after injury analysis.</p></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ VOICE CHAT ═══ -->
+    <div id="tab-chat" class="tab">
+      <div class="ph"><h1>🎙️ AI Voice Assistant</h1><span class="lbadge">● FREE · NO KEY</span></div>
+      <div class="g2" style="align-items:start">
+        <div class="card">
+          <div class="ct"><svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/></svg>Speak to AidSense</div>
+          <div class="vow">
+            <div class="vorb" id="vorb" onclick="toggleListen()">
+              <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4m-4 0h8"/></svg>
+            </div>
+            <div class="vs" id="vs">Tap orb to speak</div>
+            <div class="vt" id="vtr"></div>
+          </div>
+          <canvas id="cwv"></canvas>
+          <div class="dv"></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <div class="qchip" onclick="qChat('What do I do for a deep cut?')">Deep cut</div>
+            <div class="qchip" onclick="qChat('How to treat a burn?')">Burns</div>
+            <div class="qchip" onclick="qChat('CPR steps?')">CPR</div>
+            <div class="qchip" onclick="qChat('How to stop bleeding?')">Bleeding</div>
+            <div class="qchip" onclick="qChat('Choking emergency?')">Choking</div>
+            <div class="qchip" onclick="qChat('Signs of a fracture?')">Fracture</div>
+          </div>
+          <div class="cin">
+            <input class="cinp" id="cin" placeholder="Or type your question..." onkeydown="if(event.key==='Enter')sendChat()">
+            <button class="btn bp" onclick="sendChat()"><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ct"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>Conversation</div>
+          <div class="cmsg" id="chatBox">
+            <div class="msg b">
+              <div class="bbl">👋 Hi! I'm AidSense. Tap the orb to speak, or type below. I'll give voice + text responses. I work offline too — no internet required for basic first aid guidance!</div>
+              <span class="mt">AidSense · now</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ SOS ═══ -->
+    <div id="tab-sos" class="tab">
+      <div class="ph"><h1>🚨 Emergency SOS</h1><span style="font-size:10px;color:var(--dan);animation:blk .8s infinite">● EMERGENCY MODE</span></div>
+      <div class="g2" style="align-items:start">
+        <div>
+          <div class="card" style="margin-bottom:12px"><button class="sosbtn" onclick="triggerSOS()">🆘 SEND SOS ALERT</button></div>
+          <div class="card">
+            <div class="ct"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.63A2 2 0 012 .18h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.07 6.07l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>Emergency Numbers</div>
+            <div class="ecitem"><div><div class="ecn">🚑 Ambulance</div><div class="ecnum">108 · India Emergency</div></div><button class="btn bd" onclick="callNum('108')">Call</button></div>
+            <div class="ecitem"><div><div class="ecn">🚔 Police</div><div class="ecnum">100</div></div><button class="btn bd" onclick="callNum('100')">Call</button></div>
+            <div class="ecitem"><div><div class="ecn">🔥 Fire</div><div class="ecnum">101</div></div><button class="btn bd" onclick="callNum('101')">Call</button></div>
+            <div class="ecitem"><div><div class="ecn">🆘 National Emergency</div><div class="ecnum">112</div></div><button class="btn bd" onclick="callNum('112')">Call</button></div>
+          </div>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:12px">
+            <div class="ct"><svg viewBox="0 0 24 24"><circle cx="12" cy="10" r="3"/><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 10-16 0c0 3 2.7 6.9 8 11.7z"/></svg>GPS Hospital Finder</div>
+            <button class="btn bp" style="width:100%;justify-content:center;margin-bottom:9px" onclick="findHospitals()"><svg viewBox="0 0 24 24"><circle cx="12" cy="10" r="3"/><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 10-16 0c0 3 2.7 6.9 8 11.7z"/></svg>Find Hospitals Near Me</button>
+            <div id="hospList"><div class="noinj" style="padding:10px"><p>Tap button to locate hospitals</p></div></div>
+          </div>
+          <div class="card">
+            <div class="ct"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 010 8.49M7.76 7.76a6 6 0 000 8.49M20.49 3.51a12 12 0 010 16.97M3.51 3.51a12 12 0 000 16.97"/></svg>Emergency Radar</div>
+            <canvas id="rdr" width="200" height="200"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ STATS ═══ -->
+    <div id="tab-stats" class="tab">
+      <div class="ph"><h1>📊 Health Analytics</h1><span class="lbadge">● LIVE</span></div>
+      <div class="g4" style="margin-bottom:13px">
+        <div class="stcard"><div class="stnum" id="stS">0</div><div class="stlb">Total Scans</div></div>
+        <div class="stcard"><div class="stnum" id="stC">0</div><div class="stlb">Critical</div></div>
+        <div class="stcard"><div class="stnum" id="stSes">1</div><div class="stlb">Session</div></div>
+        <div class="stcard"><div class="stnum" id="stAvg">—</div><div class="stlb">Avg Conf.</div></div>
+      </div>
+      <div class="g2">
+        <div>
+          <div class="card" style="margin-bottom:12px">
+            <div class="ct"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Scan History</div>
+            <div id="histList"><div class="noinj"><p>No scans yet</p></div></div>
+          </div>
+          <div class="card">
+            <div class="ct"><svg viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>Severity Chart</div>
+            <canvas id="barChart" height="110"></canvas>
+          </div>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:12px">
+            <div class="ct"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>Session QR Summary</div>
+            <div id="qrbox"></div>
+            <div class="brow" style="justify-content:center">
+              <button class="btn bp" onclick="genQR()"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Generate QR</button>
+              <button class="btn bo" onclick="dlSummary()"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/></svg>Download</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="ct"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>AI Insights</div>
+            <div id="aiIns" style="font-size:11px;line-height:1.7;color:var(--td)">Complete a scan to receive AI-generated insights.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ── Floating voice orb ── -->
+<div id="orb" onclick="goTab('chat',document.getElementById('ni-chat'))" title="Voice Assistant">
+  <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4m-4 0h8"/></svg>
+</div>
+
+<!-- ── JavaScript modules (load order matters) ── -->
+<script src="{% static 'core/js/ml-model.js' %}"></script>
+<script src="{% static 'core/js/voice.js' %}"></script>
+<script src="{% static 'core/js/chatbot.js' %}"></script>
+<script src="{% static 'core/js/app.js' %}"></script>
+<script src="{% static 'core/js/background.js' %}"></script>
+
+</body>
+</html>
