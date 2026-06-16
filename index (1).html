@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="Savexa — AI-powered First Aid Assistant. Instantly analyze injuries with your camera and get step-by-step emergency guidance." />
+<title>Savexa — AI First Aid Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="frontendstyle.css" />
+</head>
+<body>
+
+<!-- ░░ AMBIENT BACKGROUND ░░ -->
+<div class="bg-aurora" aria-hidden="true">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+  <div class="grid-overlay"></div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     NAV
+══════════════════════════════════════════ -->
+<header class="nav">
+  <div class="nav-inner">
+    <a href="#" class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 6v6c0 5 3.5 9.3 8 10 4.5-.7 8-5 8-10V6l-8-4Z"/><path d="M12 8v6M9 11h6"/></svg>
+      </div>
+      <div>
+        <div class="brand-name">Savexa</div>
+        <div class="brand-tag">AI First Aid</div>
+      </div>
+    </a>
+    <nav class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#how">How it works</a>
+      <a href="#trust">Trust</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <div class="nav-cta">
+      <span class="status-pill"><span class="dot"></span> Model online</span>
+      <!-- Single nav SOS — no duplicate -->
+      <button class="btn btn-ghost nav-sos-btn" id="navSosBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M22 16.92V21a1 1 0 0 1-1.11 1A19.86 19.86 0 0 1 2 4.11 1 1 0 0 1 3 3h4.09a1 1 0 0 1 1 .75c.13.6.32 1.18.57 1.74a1 1 0 0 1-.23 1.11L7 8a16 16 0 0 0 9 9l1.4-1.4a1 1 0 0 1 1.11-.23c.56.25 1.14.44 1.74.57a1 1 0 0 1 .75 1z"/></svg>
+        SOS
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 1 — HOME / LANDING
+     Shown by default. Scanner hidden until user acts.
+══════════════════════════════════════════ -->
+<div id="screenHome">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="container hero-grid">
+      <div class="hero-copy">
+        <span class="eyebrow">
+          <span class="eyebrow-dot"></span>
+          Vision model v3.2 · 99.1% precision
+        </span>
+        <h1 class="hero-title">
+          First aid, <span class="grad-text">guided by AI</span><br/>
+          in under 3 seconds.
+        </h1>
+        <p class="hero-sub">
+          Point your camera at a wound. Savexa detects the injury, scores severity, and walks you through clinically-reviewed steps — even before help arrives.
+        </p>
+
+        <!-- ── 4 PRIMARY ACTIONS ── -->
+      <!-- START EMERGENCY BUTTON -->
+<div class="hero-emergency-wrap">
+  <button class="hero-emergency-btn" id="heroEmergencyBtn">
+    <span class="emergency-glow"></span>
+    <span class="emergency-text">Start Emergency</span>
+  </button>
+</div>
+
+
+
+        <div class="hero-stats">
+          <div class="stat"><div class="stat-num">2.4s</div><div class="stat-lbl">Avg. analysis</div></div>
+          <div class="stat"><div class="stat-num">99.1%</div><div class="stat-lbl">Detection precision</div></div>
+          <div class="stat"><div class="stat-num">12k+</div><div class="stat-lbl">Cases reviewed</div></div>
+        </div>
+      </div>
+
+
+    </div>
+
+    <div class="trusted-row container">
+      <span class="trusted-lbl">Aligned with</span>
+      <span class="trusted-item">Red Cross Guidelines</span>
+      <span class="trusted-dot"></span>
+      <span class="trusted-item">WHO Basic First Aid</span>
+      <span class="trusted-dot"></span>
+      <span class="trusted-item">AHA CPR 2024</span>
+      <span class="trusted-dot"></span>
+      <span class="trusted-item">HIPAA-ready</span>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="section" id="features">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow"><span class="eyebrow-dot"></span> Capabilities</span>
+        <h2>Clinical intelligence, in your pocket.</h2>
+        <p>Every scan runs through a multi-stage vision pipeline trained on 1.2M annotated medical images.</p>
+      </div>
+      <div class="feat-grid">
+        <div class="feat-card glass">
+          <div class="feat-ico grad-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+          <h3>Real-time vision</h3>
+          <p>Webcam-powered analysis with on-device frame capture. Works offline after first load.</p>
+          <div class="feat-meta">Avg. 2.4s · 99.1% precision</div>
+        </div>
+        <div class="feat-card glass">
+          <div class="feat-ico grad-2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 5-4 9-9 9s-9-4-9-9 4-9 9-9 9 4 9 9z"/></svg></div>
+          <h3>Severity scoring</h3>
+          <p>Multi-class triage: minor, moderate, severe. Auto-escalation when symptoms suggest emergency care.</p>
+          <div class="feat-meta">5-tier triage model</div>
+        </div>
+        <div class="feat-card glass">
+          <div class="feat-ico grad-3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg></div>
+          <h3>Guided steps</h3>
+          <p>Voice-ready, clinically-reviewed instructions adapted to the injury, region, and severity.</p>
+          <div class="feat-meta">Reviewed by EMTs</div>
+        </div>
+        <div class="feat-card glass">
+          <div class="feat-ico grad-4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+          <h3>Nearby hospitals</h3>
+          <p>Instantly surface ERs, urgent cares, and pharmacies around you — sorted by ETA.</p>
+          <div class="feat-meta">Geo-aware routing</div>
+        </div>
+        <div class="feat-card glass">
+          <div class="feat-ico grad-5"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 16.92V21a1 1 0 0 1-1.11 1A19.86 19.86 0 0 1 2 4.11 1 1 0 0 1 3 3h4.09a1 1 0 0 1 1 .75c.13.6.32 1.18.57 1.74a1 1 0 0 1-.23 1.11L7 8a16 16 0 0 0 9 9l1.4-1.4a1 1 0 0 1 1.11-.23c.56.25 1.14.44 1.74.57a1 1 0 0 1 .75 1z"/></svg></div>
+          <h3>One-tap SOS</h3>
+          <p>Share your location with emergency contacts and call services without leaving the app.</p>
+          <div class="feat-meta">Tap-and-hold safety</div>
+        </div>
+        <div class="feat-card glass">
+          <div class="feat-ico grad-6"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+          <h3>Private by default</h3>
+          <p>Frames are processed in-memory and never stored. End-to-end encryption on every request.</p>
+          <div class="feat-meta">HIPAA-ready architecture</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="section section-alt" id="how">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow"><span class="eyebrow-dot"></span> How it works</span>
+        <h2>From injury to instructions, in three steps.</h2>
+      </div>
+      <div class="steps-grid">
+        <div class="step-card glass">
+          <div class="step-num">01</div>
+          <h3>Capture</h3>
+          <p>Open the camera, frame the affected area, and hold steady. Savexa auto-focuses and stabilizes the shot.</p>
+        </div>
+        <div class="step-card glass">
+          <div class="step-num">02</div>
+          <h3>Analyze</h3>
+          <p>Our vision pipeline runs region detection, tissue classification, and severity scoring in under 3 seconds.</p>
+        </div>
+        <div class="step-card glass">
+          <div class="step-num">03</div>
+          <h3>Act</h3>
+          <p>Follow guided steps with timers, checklists, and emergency escalation when needed.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOSPITALS -->
+  <section class="section" id="hospitals">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow"><span class="eyebrow-dot"></span> Nearby care</span>
+        <h2>Hospitals &amp; urgent care near you</h2>
+      </div>
+      <div class="hosp-shell glass">
+        <div class="hosp-map" id="hospMap">
+          <div class="map-grid"></div>
+          <!-- Route lines SVG -->
+          <svg class="map-routes" viewBox="0 0 400 380" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M192 190 L120 107" stroke="rgba(99,102,241,0.4)" stroke-width="1.5" stroke-dasharray="5 4"/>
+            <path d="M192 190 L256 236" stroke="rgba(34,211,238,0.4)" stroke-width="1.5" stroke-dasharray="5 4"/>
+            <path d="M192 190 L296 144" stroke="rgba(236,72,153,0.3)" stroke-width="1.5" stroke-dasharray="5 4"/>
+          </svg>
+          <div class="map-pin you"><span></span>You</div>
+          <div class="map-pin p1">A</div>
+          <div class="map-pin p2">B</div>
+          <div class="map-pin p3">C</div>
+        </div>
+        <div class="hosp-list" id="hospList">
+          <div class="hosp-card">
+            <div class="hosp-badge hosp-badge-a">A</div>
+            <div class="hosp-info">
+              <div class="hosp-name">St. Mercy General Hospital</div>
+              <div class="hosp-meta"><span class="open">● Open 24h</span> · ER · Trauma I</div>
+            </div>
+            <div class="hosp-eta">
+              <b>1.2 km</b>
+              <span class="eta-chip">~5 min</span>
+              <a class="hosp-route-btn" href="#" onclick="return false">Route →</a>
+            </div>
+          </div>
+          <div class="hosp-card">
+            <div class="hosp-badge hosp-badge-b">B</div>
+            <div class="hosp-info">
+              <div class="hosp-name">CityCare Urgent Clinic</div>
+              <div class="hosp-meta"><span class="open">● Open</span> · Urgent care</div>
+            </div>
+            <div class="hosp-eta">
+              <b>2.4 km</b>
+              <span class="eta-chip">~9 min</span>
+              <a class="hosp-route-btn" href="#" onclick="return false">Route →</a>
+            </div>
+          </div>
+          <div class="hosp-card">
+            <div class="hosp-badge hosp-badge-c">C</div>
+            <div class="hosp-info">
+              <div class="hosp-name">Northside Children's ER</div>
+              <div class="hosp-meta"><span class="open">● Open 24h</span> · Pediatric ER</div>
+            </div>
+            <div class="hosp-eta">
+              <b>3.8 km</b>
+              <span class="eta-chip">~14 min</span>
+              <a class="hosp-route-btn" href="#" onclick="return false">Route →</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRUST -->
+  <section class="section section-alt" id="trust">
+    <div class="container">
+      <div class="trust-grid">
+        <div>
+          <span class="eyebrow"><span class="eyebrow-dot"></span> Trust &amp; safety</span>
+          <h2>Built with clinicians. Reviewed for safety.</h2>
+          <p class="trust-p">Savexa is a decision-support tool — not a replacement for professional care. Every guidance flow is reviewed by licensed EMTs and updated quarterly against the latest international standards.</p>
+          <div class="trust-badges">
+            <div class="t-badge">🛡️ HIPAA-ready</div>
+            <div class="t-badge">🔒 E2E encrypted</div>
+            <div class="t-badge">⚕️ EMT-reviewed</div>
+            <div class="t-badge">🌍 ISO 27001</div>
+          </div>
+        </div>
+        <div class="quote-card glass">
+          <div class="quote-mark">"</div>
+          <p>Savexa cut our triage time by 40% during field training. The severity scoring is shockingly accurate.</p>
+          <div class="quote-by">
+            <div class="qb-avatar">DR</div>
+            <div><div class="qb-name">Dr. Renee Adler</div><div class="qb-role">EM physician, Mercy General</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section" id="faq">
+    <div class="container faq-container">
+      <div class="section-head">
+        <span class="eyebrow"><span class="eyebrow-dot"></span> FAQ</span>
+        <h2>Questions, answered.</h2>
+      </div>
+      <div class="faq-list">
+        <details class="faq-item glass" open>
+          <summary>Is Savexa a replacement for emergency services?</summary>
+          <p>No. Savexa helps you act quickly while you contact or wait for professional help. For any life-threatening situation, call your local emergency number immediately.</p>
+        </details>
+        <details class="faq-item glass">
+          <summary>Where do my camera frames go?</summary>
+          <p>Frames are processed in-memory only. Nothing is stored on our servers and nothing is shared with third parties.</p>
+        </details>
+        <details class="faq-item glass">
+          <summary>Does it work offline?</summary>
+          <p>After the first load, the guidance library is cached and works offline. Live scans require connectivity for the vision model.</p>
+        </details>
+        <details class="faq-item glass">
+          <summary>Which injuries are supported?</summary>
+          <p>Burns, lacerations, abrasions, sprains, nosebleeds, and more — with new categories added each release.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="section">
+    <div class="container">
+      <div class="cta-card glass">
+        <div>
+          <h2>Be ready before the moment arrives.</h2>
+          <p>Add Savexa to your home screen. It takes 5 seconds.</p>
+        </div>
+        <div class="cta-actions">
+          <button class="btn btn-primary btn-lg" id="ctaStartBtn">Open the scanner</button>
+          <button class="btn btn-glass btn-lg" id="ctaDemoBtn">Watch demo</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="brand">
+        <div class="brand-mark sm">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 2 4 6v6c0 5 3.5 9.3 8 10 4.5-.7 8-5 8-10V6l-8-4Z"/><path d="M12 8v6M9 11h6"/></svg>
+        </div>
+        <div>
+          <div class="brand-name">Savexa</div>
+          <div class="brand-tag">© 2025 — All rights reserved</div>
+        </div>
+      </div>
+      <div class="foot-links">
+        <a href="#">Privacy</a><a href="#">Terms</a><a href="#">Security</a><a href="#">Contact</a>
+      </div>
+    </div>
+  </footer>
+
+</div><!-- /#screenHome -->
+
+<!-- ══════════════════════════════════════════
+     SCREEN 2 — SCANNER (hidden until hero click)
+══════════════════════════════════════════ -->
+<div id="screenScan" hidden>
+  <section class="section scan-screen-section" id="scan">
+    <div class="container">
+
+      <!-- Back button -->
+      <button class="back-btn" id="btnBackHome">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Back to home
+      </button>
+
+      <div class="section-head" style="margin-bottom:32px">
+        <span class="eyebrow"><span class="eyebrow-dot"></span> Live scanner</span>
+        <h2>Scan your injury</h2>
+        <p>Allow camera access, or click <b>Use demo image</b> to see a full analysis without your webcam.</p>
+      </div>
+
+      <!-- Severity overlay badge (shown after scan) -->
+      <div class="scan-overlay-header" id="scanOverlayHeader" hidden>
+        <span class="sov-label" id="sovInjuryType">—</span>
+        <span class="sev" id="sovSeverity">—</span>
+        <span class="sov-conf" id="sovConfidence">—% confidence</span>
+      </div>
+
+      <div class="scan-shell glass">
+        <div class="scan-left">
+          <!-- Emergency attention banner -->
+          <div class="emergency-banner" id="emergencyBanner">
+            <span class="emg-icon">⚠</span>
+            <span class="emg-text">Emergency? <b>Scan now</b> — point camera &amp; capture</span>
+            <button class="emg-dismiss" id="emgDismiss" aria-label="Dismiss">✕</button>
+          </div>
+          <div class="cam-stage" id="camStage">
+            <video id="camVideo" autoplay playsinline muted></video>
+            <canvas id="camCanvas" hidden></canvas>
+            <div class="cam-empty" id="camEmpty">
+              <div class="cam-empty-ico">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              </div>
+              <div class="cam-empty-t">Camera idle</div>
+              <div class="cam-empty-s">Click <b>Start camera</b> to begin a live scan.</div>
+            </div>
+            <div class="cam-overlay" id="camOverlay" hidden>
+              <span class="corner tl"></span><span class="corner tr"></span>
+              <span class="corner bl"></span><span class="corner br"></span>
+              <div class="scan-line"></div>
+              <div class="cam-status" id="camStatus">Awaiting subject…</div>
+            </div>
+            <div class="analyze-veil" id="analyzeVeil" hidden>
+              <div class="spinner"></div>
+              <div class="analyze-title" id="analyzeTitle">Analyzing image…</div>
+              <div class="analyze-sub" id="analyzeSub">Region detection</div>
+              <div class="analyze-bar"><div class="analyze-bar-fill" id="analyzeBarFill"></div></div>
+            </div>
+          </div>
+          <!-- Compact camera controls -->
+          <div class="cam-controls">
+            <button class="btn btn-primary" id="btnStartCam">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13" r="4"/><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/></svg>
+              Start camera
+            </button>
+            <button class="btn btn-capture" id="btnCapture" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>
+              Capture
+            </button>
+            <!-- Upload input -->
+            <label class="btn btn-glass upload-label" for="fileUploadInput">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Upload
+            </label>
+            <input type="file" id="fileUploadInput" accept="image/*" hidden />
+            <button class="btn btn-ghost" id="btnDemo">Demo image</button>
+            <button class="btn btn-ghost" id="btnStopCam">Stop</button>
+          </div>
+        </div>
+
+        <aside class="scan-right">
+          <div class="panel-head">
+            <div>
+              <div class="panel-title">Diagnosis</div>
+              <div class="panel-sub" id="panelSub">No scan yet</div>
+            </div>
+            <div class="ring-wrap small">
+              <div class="ring" style="--p: 0" id="confRing"><div class="ring-inner"><div class="ring-num" id="confNum">—</div><div class="ring-lbl">Confidence</div></div></div>
+            </div>
+          </div>
+          <div class="diag-card" id="diagCard">
+            <div class="diag-empty">
+              <div class="diag-empty-ico">🩺</div>
+              <div class="diag-empty-t">Run a scan to see results</div>
+              <div class="diag-empty-s">You'll get an injury type, severity, and step-by-step plan.</div>
+            </div>
+          </div>
+          <div class="diag-actions" id="diagActions" hidden>
+            <button class="btn btn-glass" id="btnRescan">Re-scan</button>
+            <button class="btn btn-primary" id="btnGuide">Open guidance →</button>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ RESULTS DASHBOARD (appears after analysis) ══ -->
+  <section class="section section-alt" id="guidance" hidden>
+    <div class="container">
+
+      <div class="section-head">
+        <span class="eyebrow"><span class="eyebrow-dot"></span> Guided care</span>
+        <h2 id="guideTitle">Step-by-step guidance</h2>
+        <p id="guideSub">Follow these clinically-reviewed steps. Tap a step to expand.</p>
+      </div>
+
+      <!-- Voice guidance toolbar -->
+      <div class="voice-toolbar glass" id="voiceToolbar">
+        <button class="btn btn-primary" id="voicePlayBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Read steps aloud
+        </button>
+        <button class="btn btn-glass" id="voicePauseBtn" hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+          Pause
+        </button>
+        <button class="btn btn-ghost" id="voiceStopBtn" hidden>Stop</button>
+        <select class="voice-speed" id="voiceSpeed">
+          <option value="0.8">Slow</option>
+          <option value="1" selected>Normal</option>
+          <option value="1.3">Fast</option>
+        </select>
+        <span class="voice-status" id="voiceStatus"></span>
+        <!-- Waveform visualiser -->
+        <div class="voice-wave" id="voiceWave" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+
+      <!-- 3-column results dashboard -->
+      <div class="results-dashboard">
+        <!-- LEFT: SNACS / remedies sidebar -->
+        <aside class="dash-sidebar glass">
+          <div class="dash-sidebar-head">
+            <span class="sidebar-icon">💊</span>
+            <span>SNACS &amp; Remedies</span>
+          </div>
+          <div class="guide-side-inner">
+            <div class="side-head">Vitals to watch</div>
+            <ul class="vitals">
+              <li><span class="v-dot ok"></span> Breathing — should remain steady</li>
+              <li><span class="v-dot warn"></span> Pain level — escalate if &gt; 7/10</li>
+              <li><span class="v-dot bad"></span> Bleeding — call 911 if uncontrolled &gt; 10 min</li>
+            </ul>
+            <div class="side-head" style="margin-top:18px">When to call 911</div>
+            <ul class="vitals">
+              <li>Loss of consciousness</li>
+              <li>Difficulty breathing</li>
+              <li>Severe or arterial bleeding</li>
+              <li>Suspected fractures or spinal injury</li>
+            </ul>
+            <div class="side-head" style="margin-top:18px">DIY Remedies</div>
+            <ul class="vitals">
+              <li>🌿 Aloe vera for minor burns</li>
+              <li>🧊 Cold compress for swelling</li>
+              <li>🍯 Honey dressing for abrasions</li>
+            </ul>
+            <button class="btn btn-danger w-full" id="guideSos" style="margin-top:18px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 16.92V21a1 1 0 0 1-1.11 1A19.86 19.86 0 0 1 2 4.11 1 1 0 0 1 3 3h4.09a1 1 0 0 1 1 .75c.13.6.32 1.18.57 1.74a1 1 0 0 1-.23 1.11L7 8a16 16 0 0 0 9 9l1.4-1.4a1 1 0 0 1 1.11-.23c.56.25 1.14.44 1.74.57a1 1 0 0 1 .75 1z"/></svg>
+              Call emergency
+            </button>
+          </div>
+        </aside>
+
+        <!-- CENTER: Steps -->
+        <div class="dash-center">
+          <div class="guide-steps glass" id="guideSteps"></div>
+        </div>
+
+        <!-- RIGHT: Session summary mini -->
+        <aside class="dash-summary glass">
+          <div class="dash-sidebar-head">
+            <span class="sidebar-icon">📋</span>
+            <span>Session Summary</span>
+          </div>
+          <div class="summary-timeline" id="summaryTimeline">
+            <div class="sum-empty">Complete steps to see summary</div>
+          </div>
+          <button class="btn btn-glass w-full" id="btnDownloadSummary" style="margin-top:14px" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download report
+          </button>
+        </aside>
+      </div>
+
+    </div>
+  </section>
+
+</div><!-- /#screenScan -->
+
+<!-- ══════════════════════════════════════════
+     SINGLE FLOATING SOS BUTTON
+══════════════════════════════════════════ -->
+<button class="sos-fab" id="sosFab" aria-label="Emergency SOS">
+  <span class="sos-pulse"></span>
+  <span class="sos-label">SOS</span>
+</button>
+
+<!-- ══════════════════════════════════════════
+     SOS MODAL (single instance)
+══════════════════════════════════════════ -->
+<div class="modal" id="sosModal" hidden>
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-card glass sos-modal-card">
+    <div class="modal-ico sos-modal-ico">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 16.92V21a1 1 0 0 1-1.11 1A19.86 19.86 0 0 1 2 4.11 1 1 0 0 1 3 3h4.09a1 1 0 0 1 1 .75c.13.6.32 1.18.57 1.74a1 1 0 0 1-.23 1.11L7 8a16 16 0 0 0 9 9l1.4-1.4a1 1 0 0 1 1.11-.23c.56.25 1.14.44 1.74.57a1 1 0 0 1 .75 1z"/></svg>
+    </div>
+    <div class="sos-modal-warn">⚠ CRITICAL CONDITION ALERT</div>
+    <h3>Send emergency alert?</h3>
+    <p>This will share your live GPS location with your emergency contacts and prepare a call to local services.</p>
+    <div class="sos-gps-row">
+      <span class="sos-gps-dot"></span>
+      <span class="sos-gps-text">GPS ready · Nearest hospital: St. Mercy General (1.2 km)</span>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" data-close>Cancel</button>
+      <button class="btn btn-danger sos-confirm-btn" id="sosConfirm">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M22 16.92V21a1 1 0 0 1-1.11 1A19.86 19.86 0 0 1 2 4.11 1 1 0 0 1 3 3h4.09a1 1 0 0 1 1 .75c.13.6.32 1.18.57 1.74a1 1 0 0 1-.23 1.11L7 8a16 16 0 0 0 9 9l1.4-1.4a1 1 0 0 1 1.11-.23c.56.25 1.14.44 1.74.57a1 1 0 0 1 .75 1z"/></svg>
+        Call Ambulance
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     CHATBOT (floating FAB + popup)
+══════════════════════════════════════════ -->
+<button id="chatFab" aria-label="Chat Assistant">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+</button>
+<div id="chatFabLabel">AI Assistant</div>
+
+<div id="chatModal" hidden>
+  <div id="chatHeader">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.2);display:grid;place-items:center;font-size:14px">🩺</div>
+      <div>
+        <div style="font-weight:700;font-size:14px">Savexa AI</div>
+        <div style="font-size:11px;opacity:0.75">● Online · Emergency ready</div>
+      </div>
+    </div>
+    <button id="chatClose">✕</button>
+  </div>
+  <div id="chatMessages">
+    <div class="chat-bubble bot">👋 Hi! I'm your AI first aid assistant. Ask me anything about injuries, treatments, or emergency guidance.</div>
+    <div class="chat-suggestions">
+      <button class="chat-suggest-btn" data-q="What should I do for burns?">🔥 Burns</button>
+      <button class="chat-suggest-btn" data-q="When should I call an ambulance?">🚑 Call 911?</button>
+      <button class="chat-suggest-btn" data-q="Find nearest hospital">📍 Hospital</button>
+      <button class="chat-suggest-btn" data-q="How to stop bleeding?">🩸 Bleeding</button>
+    </div>
+  </div>
+  <div id="chatInputRow">
+    <input id="chatInput" type="text" placeholder="Ask about first aid…" autocomplete="off" />
+    <button id="chatMic" title="Voice input">🎙️</button>
+    <button id="chatSend" title="Send">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     EMERGENCY METHOD MODAL
+══════════════════════════════════════════ -->
+<div class="modal" id="emergencyMethodModal" hidden>
+  <div class="modal-backdrop" data-close-emergency></div>
+  <div class="modal-card glass emergency-method-card">
+    <div class="emm-header">
+      <div class="emm-icon">🚨</div>
+      <h3>Choose Emergency Method</h3>
+      <p>How would you like to scan your injury?</p>
+      <button class="emm-close" data-close-emergency>✕</button>
+    </div>
+    <div class="emm-options">
+      <button class="emm-option" id="emmUploadBtn">
+        <div class="emm-opt-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+        <div class="emm-opt-text">
+          <span class="emm-opt-title">Upload Image</span>
+          <span class="emm-opt-hint">From your gallery or files</span>
+        </div>
+        <span class="emm-opt-arrow">→</span>
+      </button>
+      <button class="emm-option" id="emmCameraBtn">
+        <div class="emm-opt-icon emm-cam">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        </div>
+        <div class="emm-opt-text">
+          <span class="emm-opt-title">Use Camera Scanner</span>
+          <span class="emm-opt-hint">Live real-time analysis</span>
+        </div>
+        <span class="emm-opt-arrow">→</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-wrap" id="toastWrap" aria-live="polite"></div>
+
+<script src="utils.js"></script>
+<script src="frontendcamera.js"></script>
+<script src="frontendapi.js"></script>
+</body>
+</html>
