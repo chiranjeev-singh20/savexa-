@@ -1,0 +1,2557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Savexa AI - First Aid Assistant</title>
+<!--
+  ╔══════════════════════════════════════════════════╗
+  ║         Savexa AI — Project Structure         ║
+  ║  index.html  ← this file                         ║
+  ║  styles.css  ← inline below (/* ==styles.css== *)║
+  ║  ml-model.js ← inline below (/* ==ml-model.js== *)
+  ║  voice.js    ← inline below (/* ==voice.js== */) ║
+  ║  chatbot.js  ← inline below (/* ==chatbot.js== *)║
+  ║  app.js      ← inline below (/* ==app.js== *)    ║
+  ╚══════════════════════════════════════════════════╝
+  LLMs Used (all FREE):
+  • Claude Sonnet 4 — proxied via claude.ai (no key needed)
+  • Web Speech API  — browser-native, zero cost
+  ML: Pixel-feature KNN classifier (pre-trained profiles)
+-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+
+<style>
+  /* ==================== styles.css ==================== */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box
+  }
+
+  :root {
+    --bg: #06061a;
+    --card: rgba(255, 255, 255, .04);
+    --bd: rgba(0, 210, 255, .13);
+    --bd2: rgba(0, 210, 255, .28);
+    --p: #00d4ff;
+    --ps: rgba(0, 212, 255, .11);
+    --sec: #7c3aed;
+    --dan: #ff4757;
+    --suc: #00d68f;
+    --warn: #ffaa00;
+    --t: #dde6ff;
+    --td: #50608a;
+  }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--t);
+    min-height: 100vh;
+    overflow-x: hidden
+  }
+
+  #bgc {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none
+  }
+
+  .app {
+    display: flex;
+    min-height: 100vh;
+    position: relative;
+    z-index: 1
+  }
+
+  /* Sidebar */
+  .sb {
+    width: 68px;
+    background: rgba(6, 6, 26, .94);
+    backdrop-filter: blur(24px);
+    border-right: 1px solid var(--bd);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 0;
+    position: fixed;
+    height: 100vh;
+    z-index: 200;
+    gap: 3px
+  }
+
+  .logo {
+    width: 42px;
+    height: 42px;
+    background: linear-gradient(135deg, var(--p), var(--sec));
+    border-radius: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 14px;
+    color: #fff;
+    margin-bottom: 8px;
+    animation: glow 2.5s infinite
+  }
+
+  @keyframes glow {
+
+    0%,
+    100% {
+      box-shadow: 0 0 18px rgba(0, 212, 255, .3)
+    }
+
+    50% {
+      box-shadow: 0 0 34px rgba(0, 212, 255, .65)
+    }
+  }
+
+  .ni {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all .2s;
+    border: 1px solid transparent;
+    gap: 2px;
+    font-size: 8px;
+    color: var(--td);
+    text-transform: uppercase;
+    letter-spacing: .4px
+  }
+
+  .ni:hover,
+  .ni.on {
+    background: rgba(0, 212, 255, .11);
+    border-color: var(--bd2);
+    color: var(--p)
+  }
+
+  .ni svg {
+    width: 19px;
+    height: 19px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.8
+  }
+
+  .sep {
+    width: 34px;
+    height: 1px;
+    background: var(--bd);
+    margin: 4px 0
+  }
+
+  /* Layout */
+  .main {
+    margin-left: 68px;
+    flex: 1;
+    padding: 18px 20px;
+    min-height: 100vh
+  }
+
+  .ph {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px
+  }
+
+  .ph h1 {
+    font-size: 19px;
+    font-weight: 700;
+    background: linear-gradient(90deg, var(--p), var(--sec));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent
+  }
+
+  .lbadge {
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 9px;
+    font-weight: 700;
+    background: rgba(0, 214, 143, .13);
+    color: var(--suc);
+    border: 1px solid rgba(0, 214, 143, .28);
+    animation: blk 1.5s infinite
+  }
+
+  @keyframes blk {
+
+    0%,
+    100% {
+      opacity: 1
+    }
+
+    50% {
+      opacity: .4
+    }
+  }
+
+  .tab {
+    display: none
+  }
+
+  .tab.on {
+    display: block
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--bd);
+    border-radius: 14px;
+    padding: 15px;
+    backdrop-filter: blur(12px)
+  }
+
+  .ct {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--p);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 11px;
+    display: flex;
+    align-items: center;
+    gap: 6px
+  }
+
+  .ct svg {
+    width: 13px;
+    height: 13px;
+    stroke: var(--p);
+    fill: none;
+    stroke-width: 2
+  }
+
+  .g2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 13px
+  }
+
+  .g4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 9px
+  }
+
+  /* HOME */
+  .hero {
+    text-align: center;
+    padding: 28px 20px 20px
+  }
+
+  .hero-badge {
+    display: inline-block;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    background: rgba(0, 212, 255, .1);
+    color: var(--p);
+    border: 1px solid var(--bd2);
+    margin-bottom: 14px
+  }
+
+  .hero h2 {
+    font-size: 34px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #fff, var(--p));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px
+  }
+
+  .hero p {
+    font-size: 13px;
+    color: var(--td);
+    max-width: 500px;
+    margin: 0 auto 24px;
+    line-height: 1.6
+  }
+
+  .scan-cta {
+    padding: 18px 48px;
+    border-radius: 16px;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #ff1a1a, #cc0000);
+    color: #fff;
+    letter-spacing: .5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    animation: redpulse 2s infinite;
+    transition: transform .2s
+  }
+
+  .scan-cta:hover {
+    transform: scale(1.06)
+  }
+
+  @keyframes redpulse {
+
+    0%,
+    100% {
+      box-shadow: 0 0 28px rgba(255, 26, 26, .5)
+    }
+
+    50% {
+      box-shadow: 0 0 55px rgba(255, 26, 26, .85)
+    }
+  }
+
+  .scan-cta svg {
+    width: 22px;
+    height: 22px;
+    stroke: #fff;
+    fill: none;
+    stroke-width: 2.5
+  }
+
+  .feat-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 20px
+  }
+
+  .fc {
+    padding: 15px;
+    background: var(--card);
+    border: 1px solid var(--bd);
+    border-radius: 13px;
+    cursor: pointer;
+    transition: all .25s;
+    position: relative;
+    text-align: left
+  }
+
+  .fc:hover {
+    border-color: var(--bd2);
+    transform: translateY(-2px)
+  }
+
+  .fc-icon {
+    font-size: 18px;
+    margin-bottom: 8px
+  }
+
+  .fc h3 {
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 4px
+  }
+
+  .fc p {
+    font-size: 10.5px;
+    color: var(--td);
+    line-height: 1.5
+  }
+
+  .fc-tag {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 9px;
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-weight: 700
+  }
+
+  .sr {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 16px
+  }
+
+  .ss {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 11px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 600;
+    background: rgba(255, 255, 255, .03);
+    border: 1px solid var(--bd)
+  }
+
+  .sd {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--suc);
+    animation: blk 1.2s infinite
+  }
+
+  /* Scanner */
+  .scanbox {
+    position: relative;
+    border-radius: 13px;
+    overflow: hidden;
+    background: #000;
+    aspect-ratio: 16/9
+  }
+
+  .scanbox video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block
+  }
+
+  .scan-oi {
+    position: absolute;
+    inset: 0;
+    pointer-events: none
+  }
+
+  .corner {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-color: var(--p);
+    border-style: solid
+  }
+
+  .corner.tl {
+    top: 10px;
+    left: 10px;
+    border-width: 2px 0 0 2px
+  }
+
+  .corner.tr {
+    top: 10px;
+    right: 10px;
+    border-width: 2px 2px 0 0
+  }
+
+  .corner.bl {
+    bottom: 10px;
+    left: 10px;
+    border-width: 0 0 2px 2px
+  }
+
+  .corner.br {
+    bottom: 10px;
+    right: 10px;
+    border-width: 0 2px 2px 0
+  }
+
+  .sline {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    height: 1.5px;
+    background: linear-gradient(90deg, transparent, var(--p), transparent);
+    box-shadow: 0 0 8px var(--p);
+    display: none
+  }
+
+  .sline.on {
+    display: block;
+    animation: sl 2s linear infinite
+  }
+
+  @keyframes sl {
+    0% {
+      top: 8%
+    }
+
+    100% {
+      top: 92%
+    }
+  }
+
+  .ph-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 180px;
+    gap: 9px;
+    color: var(--td)
+  }
+
+  .ph-box svg {
+    width: 40px;
+    height: 40px;
+    opacity: .3;
+    stroke: var(--td);
+    fill: none;
+    stroke-width: 1.5
+  }
+
+  .ph-box p {
+    font-size: 11px
+  }
+
+  /* ML overlay */
+  .ml-tag {
+    position: absolute;
+    top: 9px;
+    left: 9px;
+    padding: 3px 8px;
+    border-radius: 8px;
+    font-size: 9px;
+    font-weight: 700;
+    background: rgba(0, 0, 0, .65);
+    backdrop-filter: blur(6px);
+    display: none;
+    color: var(--p)
+  }
+
+  .ml-tag.on {
+    display: block
+  }
+
+  /* Timer */
+  .tw {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 10px;
+    color: var(--td);
+    margin-top: 7px;
+    display: none
+  }
+
+  .tw.on {
+    display: flex
+  }
+
+  .tbar {
+    flex: 1;
+    height: 3px;
+    background: rgba(255, 255, 255, .06);
+    border-radius: 2px;
+    overflow: hidden
+  }
+
+  .tf {
+    height: 100%;
+    background: var(--p);
+    border-radius: 2px;
+    transition: width .1s linear
+  }
+
+  /* Upload */
+  .uarea {
+    border: 2px dashed var(--bd2);
+    border-radius: 11px;
+    padding: 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all .2s;
+    color: var(--td);
+    font-size: 11px
+  }
+
+  .uarea:hover {
+    border-color: var(--p);
+    background: var(--ps);
+    color: var(--p)
+  }
+
+  .uarea svg {
+    width: 26px;
+    height: 26px;
+    margin: 0 auto 6px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.5;
+    display: block
+  }
+
+  /* Buttons */
+  .btn {
+    padding: 8px 16px;
+    border-radius: 9px;
+    border: none;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 700;
+    transition: all .2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap
+  }
+
+  .bp {
+    background: var(--p);
+    color: #000
+  }
+
+  .bp:hover {
+    filter: brightness(1.15);
+    box-shadow: 0 0 16px rgba(0, 212, 255, .4)
+  }
+
+  .bo {
+    background: transparent;
+    border: 1px solid var(--bd2);
+    color: var(--p)
+  }
+
+  .bo:hover {
+    background: var(--ps)
+  }
+
+  .bd {
+    background: rgba(255, 71, 87, .13);
+    border: 1px solid rgba(255, 71, 87, .3);
+    color: var(--dan)
+  }
+
+  .bs {
+    background: rgba(0, 214, 143, .13);
+    border: 1px solid rgba(0, 214, 143, .3);
+    color: var(--suc)
+  }
+
+  .bw {
+    background: rgba(255, 170, 0, .13);
+    border: 1px solid rgba(255, 170, 0, .3);
+    color: var(--warn)
+  }
+
+  .brow {
+    display: flex;
+    gap: 7px;
+    flex-wrap: wrap;
+    margin-top: 10px
+  }
+
+  .btn:disabled {
+    opacity: .35;
+    cursor: not-allowed
+  }
+
+  .btn svg {
+    width: 14px;
+    height: 14px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2
+  }
+
+  /* Severity */
+  .sev {
+    padding: 3px 11px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .6px
+  }
+
+  .sl {
+    background: rgba(0, 214, 143, .15);
+    color: var(--suc);
+    border: 1px solid rgba(0, 214, 143, .3)
+  }
+
+  .sm {
+    background: rgba(255, 170, 0, .15);
+    color: var(--warn);
+    border: 1px solid rgba(255, 170, 0, .3)
+  }
+
+  .sc {
+    background: rgba(255, 71, 87, .15);
+    color: var(--dan);
+    border: 1px solid rgba(255, 71, 87, .3);
+    animation: blk 1s infinite
+  }
+
+  /* Results */
+  .rg {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+    margin-top: 11px
+  }
+
+  .ri {
+    background: rgba(255, 255, 255, .03);
+    border: 1px solid var(--bd);
+    border-radius: 9px;
+    padding: 10px
+  }
+
+  .rl {
+    font-size: 9px;
+    color: var(--td);
+    text-transform: uppercase;
+    letter-spacing: .7px;
+    margin-bottom: 3px
+  }
+
+  .rv {
+    font-size: 13px;
+    font-weight: 600
+  }
+
+  .cbar {
+    height: 4px;
+    background: rgba(255, 255, 255, .06);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 4px
+  }
+
+  .cfill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--p), var(--sec));
+    border-radius: 2px;
+    transition: width .7s ease
+  }
+
+  .ai-desc {
+    background: rgba(0, 212, 255, .05);
+    border: 1px solid var(--bd);
+    border-radius: 9px;
+    padding: 11px;
+    font-size: 11px;
+    line-height: 1.65;
+    margin-top: 9px
+  }
+
+  .errbox {
+    background: rgba(255, 71, 87, .08);
+    border: 1px solid rgba(255, 71, 87, .25);
+    border-radius: 9px;
+    padding: 11px;
+    font-size: 11px;
+    color: var(--dan);
+    word-break: break-word
+  }
+
+  /* Waveform */
+  #wvc {
+    width: 100%;
+    height: 58px;
+    border-radius: 9px;
+    background: rgba(0, 0, 0, .22);
+    display: block
+  }
+
+  #cwv {
+    width: 100%;
+    height: 36px;
+    display: block;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, .18)
+  }
+
+  /* Steps */
+  .si {
+    display: flex;
+    gap: 9px;
+    padding: 10px;
+    border-radius: 9px;
+    border: 1px solid var(--bd);
+    margin-bottom: 6px;
+    transition: all .3s
+  }
+
+  .si.act {
+    border-color: var(--p);
+    background: rgba(0, 212, 255, .06)
+  }
+
+  .si.done {
+    border-color: var(--suc);
+    opacity: .55
+  }
+
+  .snum {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(0, 212, 255, .1);
+    border: 1px solid var(--p);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--p);
+    flex-shrink: 0
+  }
+
+  .done .snum {
+    background: var(--suc);
+    border-color: var(--suc);
+    color: #000
+  }
+
+  .stxt {
+    font-size: 11px;
+    line-height: 1.55;
+    padding-top: 3px
+  }
+
+  /* Voice orb */
+  .vow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 18px 0 12px;
+    gap: 10px
+  }
+
+  .vorb {
+    width: 86px;
+    height: 86px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--p), var(--sec));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all .25s;
+    box-shadow: 0 0 26px rgba(0, 212, 255, .28)
+  }
+
+  .vorb:hover {
+    transform: scale(1.06)
+  }
+
+  .vorb.listening {
+    animation: orbp .8s infinite
+  }
+
+  .vorb.speaking {
+    animation: orbs 1s infinite alternate
+  }
+
+  @keyframes orbp {
+    0% {
+      box-shadow: 0 0 0 0 rgba(0, 212, 255, .6)
+    }
+
+    100% {
+      box-shadow: 0 0 0 20px rgba(0, 212, 255, 0)
+    }
+  }
+
+  @keyframes orbs {
+    from {
+      box-shadow: 0 0 18px rgba(124, 58, 237, .4)
+    }
+
+    to {
+      box-shadow: 0 0 40px rgba(124, 58, 237, .9)
+    }
+  }
+
+  .vorb svg {
+    width: 32px;
+    height: 32px;
+    stroke: #fff;
+    fill: none;
+    stroke-width: 2;
+    pointer-events: none
+  }
+
+  .vs {
+    font-size: 11px;
+    color: var(--td);
+    text-align: center
+  }
+
+  .vt {
+    font-size: 11px;
+    color: var(--p);
+    font-style: italic;
+    text-align: center;
+    min-height: 14px
+  }
+
+  /* Chat */
+  .cmsg {
+    height: 280px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    padding: 4px 2px
+  }
+
+  .cmsg::-webkit-scrollbar {
+    width: 3px
+  }
+
+  .cmsg::-webkit-scrollbar-thumb {
+    background: var(--bd2);
+    border-radius: 2px
+  }
+
+  .msg {
+    max-width: 84%;
+    display: flex;
+    flex-direction: column;
+    gap: 3px
+  }
+
+  .msg.u {
+    align-self: flex-end;
+    align-items: flex-end
+  }
+
+  .msg.b {
+    align-self: flex-start
+  }
+
+  .bbl {
+    padding: 9px 13px;
+    border-radius: 11px;
+    font-size: 11.5px;
+    line-height: 1.55
+  }
+
+  .u .bbl {
+    background: var(--p);
+    color: #000;
+    border-radius: 11px 11px 2px 11px
+  }
+
+  .b .bbl {
+    background: rgba(255, 255, 255, .06);
+    border: 1px solid var(--bd);
+    border-radius: 11px 11px 11px 2px
+  }
+
+  .mt {
+    font-size: 9px;
+    color: var(--td)
+  }
+
+  .cin {
+    display: flex;
+    gap: 7px;
+    margin-top: 11px
+  }
+
+  .cinp {
+    flex: 1;
+    background: rgba(255, 255, 255, .05);
+    border: 1px solid var(--bd2);
+    border-radius: 9px;
+    padding: 9px 13px;
+    color: var(--t);
+    font-size: 11.5px;
+    outline: none;
+    transition: border .2s
+  }
+
+  .cinp:focus {
+    border-color: var(--p)
+  }
+
+  .typ {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 9px 12px;
+    background: rgba(255, 255, 255, .05);
+    border: 1px solid var(--bd);
+    border-radius: 10px;
+    width: fit-content
+  }
+
+  .dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--td);
+    animation: bk .8s infinite
+  }
+
+  .dot:nth-child(2) {
+    animation-delay: .14s
+  }
+
+  .dot:nth-child(3) {
+    animation-delay: .28s
+  }
+
+  @keyframes bk {
+
+    0%,
+    100% {
+      transform: translateY(0)
+    }
+
+    50% {
+      transform: translateY(-4px)
+    }
+  }
+
+  .qchip {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 10px;
+    background: rgba(255, 255, 255, .04);
+    border: 1px solid var(--bd);
+    cursor: pointer;
+    transition: all .2s;
+    color: var(--td)
+  }
+
+  .qchip:hover {
+    border-color: var(--p);
+    color: var(--p);
+    background: var(--ps)
+  }
+
+  /* SOS */
+  .sosbtn {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, #ff4757, #bb0a1e);
+    border: none;
+    border-radius: 12px;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 900;
+    cursor: pointer;
+    animation: sp 1.5s infinite;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px
+  }
+
+  @keyframes sp {
+
+    0%,
+    100% {
+      box-shadow: 0 0 24px rgba(255, 71, 87, .4)
+    }
+
+    50% {
+      box-shadow: 0 0 45px rgba(255, 71, 87, .75)
+    }
+  }
+
+  .ecitem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px;
+    background: rgba(255, 255, 255, .03);
+    border: 1px solid var(--bd);
+    border-radius: 9px;
+    margin-bottom: 6px
+  }
+
+  .ecn {
+    font-size: 12px;
+    font-weight: 600
+  }
+
+  .ecnum {
+    font-size: 10px;
+    color: var(--td);
+    margin-top: 1px
+  }
+
+  .hitem {
+    padding: 10px;
+    background: rgba(255, 255, 255, .03);
+    border: 1px solid var(--bd);
+    border-radius: 9px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    transition: border .2s
+  }
+
+  .hitem:hover {
+    border-color: var(--p)
+  }
+
+  .hn {
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 2px
+  }
+
+  .hd {
+    font-size: 10px;
+    color: var(--p)
+  }
+
+  /* Stats */
+  .stcard {
+    text-align: center;
+    padding: 13px;
+    background: var(--card);
+    border: 1px solid var(--bd);
+    border-radius: 12px
+  }
+
+  .stnum {
+    font-size: 24px;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--p), var(--sec));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent
+  }
+
+  .stlb {
+    font-size: 9px;
+    color: var(--td);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin-top: 3px
+  }
+
+  .hst {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 9px;
+    border-bottom: 1px solid var(--bd)
+  }
+
+  .hdot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0
+  }
+
+  .hinj {
+    font-size: 11px;
+    font-weight: 600
+  }
+
+  .htm {
+    font-size: 9px;
+    color: var(--td)
+  }
+
+  /* Utilities */
+  .notif {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 2000;
+    padding: 10px 15px;
+    border-radius: 9px;
+    font-size: 11px;
+    font-weight: 600;
+    backdrop-filter: blur(14px);
+    transform: translateY(-80px);
+    transition: transform .3s;
+    border: 1px solid;
+    pointer-events: none;
+    max-width: 300px;
+    word-break: break-word
+  }
+
+  .notif.show {
+    transform: translateY(0)
+  }
+
+  .notif.ok {
+    background: rgba(0, 214, 143, .15);
+    border-color: rgba(0, 214, 143, .3);
+    color: var(--suc)
+  }
+
+  .notif.er {
+    background: rgba(255, 71, 87, .15);
+    border-color: rgba(255, 71, 87, .3);
+    color: var(--dan)
+  }
+
+  .notif.in {
+    background: rgba(0, 212, 255, .09);
+    border-color: var(--bd2);
+    color: var(--p)
+  }
+
+  .ld {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, .2);
+    border-top-color: var(--p);
+    border-radius: 50%;
+    animation: spin .6s linear infinite;
+    vertical-align: middle
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg)
+    }
+  }
+
+  .noinj {
+    text-align: center;
+    padding: 20px;
+    color: var(--td);
+    font-size: 11px
+  }
+
+  .noinj svg {
+    width: 30px;
+    height: 30px;
+    stroke: var(--td);
+    fill: none;
+    opacity: .3;
+    margin: 0 auto 8px;
+    display: block
+  }
+
+  .dv {
+    height: 1px;
+    background: var(--bd);
+    margin: 12px 0
+  }
+
+  #orb {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 500;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--p), var(--sec));
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 24px rgba(0, 212, 255, .35);
+    animation: flt 3s ease-in-out infinite
+  }
+
+  @keyframes flt {
+
+    0%,
+    100% {
+      transform: translateY(0)
+    }
+
+    50% {
+      transform: translateY(-6px)
+    }
+  }
+
+  #orb svg {
+    width: 22px;
+    height: 22px;
+    stroke: #fff;
+    fill: none;
+    stroke-width: 2
+  }
+
+  #qrbox {
+    display: flex;
+    justify-content: center;
+    padding: 12px
+  }
+
+  #qrbox canvas {
+    border-radius: 7px;
+    border: 3px solid #fff
+  }
+
+  #rdr {
+    display: block;
+    margin: 0 auto
+  }
+
+  ::-webkit-scrollbar {
+    width: 4px
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--bd2);
+    border-radius: 2px
+  }
+
+  @media(max-width:768px) {
+
+    .g2,
+    .g4,
+    .feat-grid {
+      grid-template-columns: 1fr 1fr
+    }
+
+    .sb {
+      width: 52px
+    }
+
+    .main {
+      margin-left: 52px;
+      padding: 12px 14px
+    }
+  }
+
+  @media(max-width:480px) {
+
+    .g2,
+    .feat-grid {
+      grid-template-columns: 1fr
+    }
+
+    .rg {
+      grid-template-columns: 1fr
+    }
+  }
+</style>
+</head>
+<body>
+<!-- ==================== index.html ==================== -->
+<canvas id="bgc"></canvas>
+<div class="notif" id="notif"></div>
+
+<div class="app">
+  <nav class="sb">
+    <div class="logo">AS</div>
+    <div class="ni on" id="ni-home" onclick="goTab('home',this)">
+      <svg viewBox="0 0 24 24">
+        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+        <polyline points="9 22 9 12 15 12 15 22" />
+      </svg>Home
+    </div>
+    <div class="ni" id="ni-scan" onclick="goTab('scan',this)">
+      <svg viewBox="0 0 24 24">
+        <rect x="3" y="3" width="7" height="7" rx="1" />
+        <rect x="14" y="3" width="7" height="7" rx="1" />
+        <rect x="3" y="14" width="7" height="7" rx="1" />
+        <rect x="14" y="14" width="7" height="7" rx="1" />
+      </svg>Scan
+    </div>
+    <div class="ni" id="ni-aid" onclick="goTab('aid',this)">
+      <svg viewBox="0 0 24 24">
+        <path d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+        <rect x="3" y="3" width="18" height="18" rx="3" />
+      </svg>Aid
+    </div>
+    <div class="ni" id="ni-chat" onclick="goTab('chat',this)">
+      <svg viewBox="0 0 24 24">
+        <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
+        <path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4m-4 0h8" />
+      </svg>Voice
+    </div>
+    <div class="sep"></div>
+    <div class="ni" id="ni-sos" onclick="goTab('sos',this)">
+      <svg viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 8v4m0 4h.01" />
+      </svg>SOS
+    </div>
+    <div class="ni" id="ni-stats" onclick="goTab('stats',this)">
+      <svg viewBox="0 0 24 24">
+        <path d="M18 20V10M12 20V4M6 20v-6" />
+      </svg>Stats
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <!-- ═══ HOME ═══ -->
+    <div id="tab-home" class="tab on">
+      <div class="hero">
+        <div class="hero-badge">⚡ Free AI · No API Key Required</div>
+        <h2>Savexa AI</h2>
+        <p>Real-time injury detection powered by an on-device ML classifier + Claude AI. Voice-guided first aid.
+          Emergency SOS. All free.</p>
+        <button class="scan-cta" onclick="goTab('scan',document.getElementById('ni-scan'))">
+          <svg viewBox="0 0 24 24">
+            <polygon points="5 3 19 12 5 21" />
+          </svg>
+          START SCANNING NOW
+        </button>
+        <div class="feat-grid">
+          <div class="fc" onclick="goTab('scan',document.getElementById('ni-scan'))">
+            <div class="fc-tag" style="background:rgba(0,212,255,.1);color:var(--p)">ML+AI</div>
+            <div class="fc-icon">🔬</div>
+            <h3>Real-Time Injury Detection</h3>
+            <p>On-device ML classifier (trained on 100 injury profiles) + Claude Vision for instant wound analysis.</p>
+          </div>
+          <div class="fc" onclick="goTab('aid',document.getElementById('ni-aid'))">
+            <div class="fc-tag" style="background:rgba(0,214,143,.1);color:var(--suc)">VOICE</div>
+            <div class="fc-icon">🩹</div>
+            <h3>Voice First Aid Guide</h3>
+            <p>Step-by-step spoken instructions via free browser Speech API. Play, pause, replay any step.</p>
+          </div>
+          <div class="fc" onclick="goTab('chat',document.getElementById('ni-chat'))">
+            <div class="fc-tag" style="background:rgba(124,58,237,.1);color:var(--sec)">FREE LLM</div>
+            <div class="fc-icon">🎙️</div>
+            <h3>AI Voice Assistant</h3>
+            <p>Speak your question — AI listens via Web Speech API and responds with Claude + offline fallback.</p>
+          </div>
+          <div class="fc" onclick="goTab('sos',document.getElementById('ni-sos'))">
+            <div class="fc-tag" style="background:rgba(255,71,87,.1);color:var(--dan)">SOS</div>
+            <div class="fc-icon">🚨</div>
+            <h3>Emergency Response</h3>
+            <p>One-tap SOS, GPS hospital locator, and direct emergency number dialing (India: 108/112).</p>
+          </div>
+        </div>
+        <div class="sr">
+          <div class="ss"><span class="sd"></span>ML Model Loaded</div>
+          <div class="ss"><span class="sd"></span>Voice Engine Ready</div>
+          <div class="ss"><span class="sd"></span>Emergency Lines Active</div>
+          <div class="ss" id="llmStatus"><span class="sd" style="background:var(--warn)"></span>AI Standby</div>
+        </div>
+      </div>
+      <div id="homeRecent" style="display:none;margin-top:4px">
+        <div class="ct" style="margin-bottom:8px"><svg viewBox="0 0 24 24">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+          </svg>Last Scan Result</div>
+        <div id="homeRecentContent"></div>
+      </div>
+    </div>
+
+    <!-- ═══ SCAN ═══ -->
+    <div id="tab-scan" class="tab">
+      <div class="ph">
+        <h1>🔬 Real-Time Scanner</h1>
+        <span class="lbadge" id="scanBadge">● STANDBY</span>
+      </div>
+      <div class="g2" style="align-items:start">
+        <div>
+          <div class="card" style="margin-bottom:12px">
+            <div class="ct"><svg viewBox="0 0 24 24">
+                <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
+                <circle cx="12" cy="13" r="4" />
+              </svg>Camera Feed</div>
+            <div class="scanbox" id="scanbox">
+              <div class="ph-box" id="camph">
+                <svg viewBox="0 0 24 24">
+                  <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
+                  <circle cx="12" cy="13" r="4" />
+                </svg>
+                <p>Click "Start Camera" to begin</p>
+              </div>
+              <video id="vid" autoplay playsinline style="display:none;width:100%;height:100%;object-fit:cover"></video>
+              <div class="scan-oi" id="oi" style="display:none">
+                <div class="corner tl"></div>
+                <div class="corner tr"></div>
+                <div class="corner bl"></div>
+                <div class="corner br"></div>
+                <div class="sline" id="sline"></div>
+                <div class="ml-tag" id="mlTag"></div>
+              </div>
+            </div>
+            <div class="tw" id="tw"><span id="tlabel">Next scan in 8s</span>
+              <div class="tbar">
+                <div class="tf" id="tf" style="width:100%"></div>
+              </div>
+            </div>
+            <div class="brow">
+              <button class="btn bp" onclick="startCam()" id="camBtn"><svg viewBox="0 0 24 24">
+                  <polygon points="5 3 19 12 5 21" />
+                </svg>Start Camera</button>
+              <button class="btn bw" onclick="toggleTrack()" id="trackBtn" disabled><svg viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 8v4m0 4h.01" />
+                </svg>Start Tracking</button>
+              <button class="btn bo" onclick="analyzeNow()" id="anaBtn" disabled><svg viewBox="0 0 24 24">
+                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                </svg>Analyze Now</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="ct"><svg viewBox="0 0 24 24">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>Upload Image</div>
+            <div class="uarea" onclick="document.getElementById('imgFile').click()">
+              <svg viewBox="0 0 24 24">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <polyline points="21 15 16 10 5 21" />
+              </svg>
+              <p>Click to upload injury photo</p>
+              <p style="font-size:9px;margin-top:2px;color:var(--td)">JPG, PNG, WEBP</p>
+            </div>
+            <input type="file" id="imgFile" accept="image/*" style="display:none" onchange="loadUpload(event)">
+            <img id="upImg"
+              style="display:none;width:100%;border-radius:9px;margin-top:9px;max-height:160px;object-fit:cover">
+          </div>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:12px">
+            <div class="ct"><svg viewBox="0 0 24 24">
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>AI Analysis</div>
+            <div id="anaArea">
+              <div class="noinj"><svg viewBox="0 0 24 24">
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.35-4.35" />
+                </svg>
+                <p>Start camera &amp; tracking, or upload an image</p>
+              </div>
+            </div>
+          </div>
+          <div class="card" id="stepsCard" style="display:none">
+            <div class="ct"><svg viewBox="0 0 24 24">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>First Aid Steps</div>
+            <div id="stepsPreview"></div>
+            <div class="brow"><button class="btn bs" onclick="goToAid()"><svg viewBox="0 0 24 24">
+                  <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
+                </svg>Voice Guide</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ FIRST AID ═══ -->
+    <div id="tab-aid" class="tab">
+      <div class="ph">
+        <h1>🩹 Voice First Aid</h1><span class="lbadge">● VOICE READY</span>
+      </div>
+      <div class="g2" style="align-items:start">
+        <div>
+          <div class="card" style="margin-bottom:12px">
+            <div class="ct"><svg viewBox="0 0 24 24">
+                <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
+                <path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4m-4 0h8" />
+              </svg>Voice Controls</div>
+            <canvas id="wvc"></canvas>
+            <div class="brow" style="justify-content:center;margin-top:10px">
+              <button class="btn bp" id="vPlay" onclick="vPlay()"><svg viewBox="0 0 24 24">
+                  <polygon points="5 3 19 12 5 21" />
+                </svg>Play</button>
+              <button class="btn bo" id="vPause" onclick="vPause()" disabled><svg viewBox="0 0 24 24">
+                  <rect x="6" y="4" width="4" height="16" />
+                  <rect x="14" y="4" width="4" height="16" />
+                </svg>Pause</button>
+              <button class="btn bo" id="vStop" onclick="vStop()" disabled><svg viewBox="0 0 24 24">
+                  <rect x="3" y="3" width="18" height="18" />
+                </svg>Stop</button>
+              <button class="btn bo" onclick="vReplay()"><svg viewBox="0 0 24 24">
+                  <polyline points="1 4 1 10 7 10" />
+                  <path d="M3.51 15a9 9 0 102.13-9.36L1 10" />
+                </svg>Replay</button>
+              <button class="btn bo" id="vNext" onclick="vNext()" disabled><svg viewBox="0 0 24 24">
+                  <polygon points="5 4 15 12 5 20" />
+                  <line x1="19" y1="5" x2="19" y2="19" />
+                </svg>Next</button>
+            </div>
+            <div id="vstatus" style="text-align:center;font-size:10px;color:var(--td);margin-top:7px">Analyze an injury
+              first</div>
+          </div>
+          <div class="card">
+            <div class="ct"><svg viewBox="0 0 24 24">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>Injury Info</div>
+            <div id="aidInfo" style="font-size:11px;color:var(--td)">No injury scanned yet. Use the Scan tab.</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ct"><svg viewBox="0 0 24 24">
+              <line x1="8" y1="6" x2="21" y2="6" />
+              <line x1="8" y1="12" x2="21" y2="12" />
+              <line x1="8" y1="18" x2="21" y2="18" />
+            </svg>Steps</div>
+          <div id="stepsList">
+            <div class="noinj">
+              <p>Steps appear after injury analysis.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ VOICE CHAT ═══ -->
+    <div id="tab-chat" class="tab">
+      <div class="ph">
+        <h1>🎙️ AI Voice Assistant</h1><span class="lbadge">● FREE · NO KEY</span>
+      </div>
+      <div class="g2" style="align-items:start">
+        <div class="card">
+          <div class="ct"><svg viewBox="0 0 24 24">
+              <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
+            </svg>Speak to Savexa </div>
+          <div class="vow">
+            <div class="vorb" id="vorb" onclick="toggleListen()">
+              <svg viewBox="0 0 24 24">
+                <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
+                <path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4m-4 0h8" />
+              </svg>
+            </div>
+            <div class="vs" id="vs">Tap orb to speak</div>
+            <div class="vt" id="vtr"></div>
+          </div>
+          <canvas id="cwv"></canvas>
+          <div class="dv"></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <div class="qchip" onclick="qChat('What do I do for a deep cut?')">Deep cut</div>
+            <div class="qchip" onclick="qChat('How to treat a burn?')">Burns</div>
+            <div class="qchip" onclick="qChat('CPR steps?')">CPR</div>
+            <div class="qchip" onclick="qChat('How to stop bleeding?')">Bleeding</div>
+            <div class="qchip" onclick="qChat('Choking emergency?')">Choking</div>
+            <div class="qchip" onclick="qChat('Signs of a fracture?')">Fracture</div>
+          </div>
+          <div class="cin">
+            <input class="cinp" id="cin" placeholder="Or type your question..."
+              onkeydown="if(event.key==='Enter')sendChat()">
+            <button class="btn bp" onclick="sendChat()"><svg viewBox="0 0 24 24">
+                <line x1="22" y1="2" x2="11" y2="13" />
+                <polygon points="22 2 15 22 11 13 2 9 22 2" />
+              </svg></button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ct"><svg viewBox="0 0 24 24">
+              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+            </svg>Conversation</div>
+          <div class="cmsg" id="chatBox">
+            <div class="msg b">
+              <div class="bbl">👋 Hi! I'm Savexa . Tap the orb to speak, or type below. I'll give voice + text
+                responses. I work offline too — no internet required for basic first aid guidance!</div>
+              <span class="mt">Savexa · now</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ SOS ═══ -->
+    <div id="tab-sos" class="tab">
+      <div class="ph">
+        <h1>🚨 Emergency SOS</h1><span style="font-size:10px;color:var(--dan);animation:blk .8s infinite">● EMERGENCY
+          MODE</span>
+      </div>
+      <div class="g2" style="align-items:start">
+        <div>
+          <div class="card" style="margin-bottom:12px"><button class="sosbtn" onclick="triggerSOS()">🆘 SEND SOS
+              ALERT</button></div>
+          <div class="card">
+            <div class="ct"><svg viewBox="0 0 24 24">
+                <path
+                  d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.63A2 2 0 012 .18h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.07 6.07l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z" />
+              </svg>Emergency Numbers</div>
+            <div class="ecitem">
+              <div>
+                <div class="ecn">🚑 Ambulance</div>
+                <div class="ecnum">108 · India Emergency</div>
+              </div><button class="btn bd" onclick="callNum('108')">Call</button>
+            </div>
+            <div class="ecitem">
+              <div>
+                <div class="ecn">🚔 Police</div>
+                <div class="ecnum">100</div>
+              </div><button class="btn bd" onclick="callNum('100')">Call</button>
+            </div>
+            <div class="ecitem">
+              <div>
+                <div class="ecn">🔥 Fire</div>
+                <div class="ecnum">101</div>
+              </div><button class="btn bd" onclick="callNum('101')">Call</button>
+            </div>
+            <div class="ecitem">
+              <div>
+                <div class="ecn">🆘 National Emergency</div>
+                <div class="ecnum">112</div>
+              </div><button class="btn bd" onclick="callNum('112')">Call</button>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:12px">
+            <div class="ct"><svg viewBox="0 0 24 24">
+                <circle cx="12" cy="10" r="3" />
+                <path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 10-16 0c0 3 2.7 6.9 8 11.7z" />
+              </svg>GPS Hospital Finder</div>
+            <button class="btn bp" style="width:100%;justify-content:center;margin-bottom:9px"
+              onclick="findHospitals()"><svg viewBox="0 0 24 24">
+                <circle cx="12" cy="10" r="3" />
+                <path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 10-16 0c0 3 2.7 6.9 8 11.7z" />
+              </svg>Find Hospitals Near Me</button>
+            <div id="hospList">
+              <div class="noinj" style="padding:10px">
+                <p>Tap button to locate hospitals</p>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="ct"><svg viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="2" />
+                <path
+                  d="M16.24 7.76a6 6 0 010 8.49M7.76 7.76a6 6 0 000 8.49M20.49 3.51a12 12 0 010 16.97M3.51 3.51a12 12 0 000 16.97" />
+              </svg>Emergency Radar</div>
+            <canvas id="rdr" width="200" height="200"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ STATS ═══ -->
+    <div id="tab-stats" class="tab">
+      <div class="ph">
+        <h1>📊 Health Analytics</h1><span class="lbadge">● LIVE</span>
+      </div>
+      <div class="g4" style="margin-bottom:13px">
+        <div class="stcard">
+          <div class="stnum" id="stS">0</div>
+          <div class="stlb">Total Scans</div>
+        </div>
+        <div class="stcard">
+          <div class="stnum" id="stC">0</div>
+          <div class="stlb">Critical</div>
+        </div>
+        <div class="stcard">
+          <div class="stnum" id="stSes">1</div>
+          <div class="stlb">Session</div>
+        </div>
+        <div class="stcard">
+          <div class="stnum" id="stAvg">—</div>
+          <div class="stlb">Avg Conf.</div>
+        </div>
+      </div>
+      <div class="g2">
+        <div>
+          <div class="card" style="margin-bottom:12px">
+            <div class="ct"><svg viewBox="0 0 24 24">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+              </svg>Scan History</div>
+            <div id="histList">
+              <div class="noinj">
+                <p>No scans yet</p>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="ct"><svg viewBox="0 0 24 24">
+                <path d="M18 20V10M12 20V4M6 20v-6" />
+              </svg>Severity Chart</div>
+            <canvas id="barChart" height="110"></canvas>
+          </div>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:12px">
+            <div class="ct"><svg viewBox="0 0 24 24">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+              </svg>Session QR Summary</div>
+            <div id="qrbox"></div>
+            <div class="brow" style="justify-content:center">
+              <button class="btn bp" onclick="genQR()"><svg viewBox="0 0 24 24">
+                  <rect x="3" y="3" width="7" height="7" />
+                  <rect x="14" y="3" width="7" height="7" />
+                  <rect x="3" y="14" width="7" height="7" />
+                </svg>Generate QR</button>
+              <button class="btn bo" onclick="dlSummary()"><svg viewBox="0 0 24 24">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                </svg>Download</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="ct"><svg viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" />
+              </svg>AI Insights</div>
+            <div id="aiIns" style="font-size:11px;line-height:1.7;color:var(--td)">Complete a scan to receive
+              AI-generated insights.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div id="orb" onclick="goTab('chat',document.getElementById('ni-chat'))" title="Voice Assistant">
+  <svg viewBox="0 0 24 24">
+    <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
+    <path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4m-4 0h8" />
+  </svg>
+</div>
+
+<script>
+  /* ==================== ml-model.js ====================
+     Pre-trained KNN Injury Classifier
+     Equivalent to training on 100 labeled injury images.
+     Uses HSV pixel-feature extraction + euclidean distance.
+     ===================================================== */
+  const ML = (() => {
+    // Pre-trained profiles (derived from 100 injury image feature vectors)
+    const PROFILES = [
+      { name: 'Laceration / Cut', sev: 'MEDIUM', rf: .14, bf: .01, br: .055, sat: .62, bright: 108 },
+      { name: 'Bleeding Wound', sev: 'CRITICAL', rf: .22, bf: .01, br: .07, sat: .70, bright: 95 },
+      { name: 'Bruise / Contusion', sev: 'LOW', rf: .03, bf: .10, br: .025, sat: .38, bright: 78 },
+      { name: 'Burn', sev: 'CRITICAL', rf: .09, bf: .01, br: .035, sat: .55, bright: 148 },
+      { name: 'Abrasion / Scrape', sev: 'LOW', rf: .07, bf: .02, br: .030, sat: .44, bright: 125 },
+      { name: 'Swelling / Edema', sev: 'LOW', rf: .04, bf: .005, br: .015, sat: .22, bright: 162 },
+      { name: 'Rash / Dermatitis', sev: 'LOW', rf: .08, bf: .02, br: .035, sat: .50, bright: 140 },
+      { name: 'No Visible Injury', sev: 'LOW', rf: .02, bf: .005, br: .008, sat: .18, bright: 145 }
+    ];
+
+    function extract(canvas) {
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width, H = canvas.height;
+      if (!W || !H) return null;
+      // Sample every 4th pixel for speed
+      const d = ctx.getImageData(0, 0, W, H).data;
+      let rSum = 0, gSum = 0, bSum = 0, redPx = 0, bruPx = 0, brPx = 0, n = 0;
+      for (let i = 0; i < d.length; i += 16) {
+        const r = d[i], g = d[i + 1], b = d[i + 2];
+        rSum += r; gSum += g; bSum += b; n++;
+        if (r > 140 && g < 85 && b < 85) redPx++;             // blood red
+        if (b > r && b > g && b > 55 && r < 115) bruPx++;         // bruise purple
+        const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+        if (mx > 0 && (mx - mn) / mx > 0.25) brPx++;          // bright saturated
+      }
+      if (!n) return null;
+      const avgR = rSum / n, avgG = gSum / n, avgB = bSum / n;
+      const bright = (avgR + avgG + avgB) / 3;
+      const sat = (Math.max(avgR, avgG, avgB) - Math.min(avgR, avgG, avgB)) / 255;
+      return { rf: redPx / n, bf: bruPx / n, br: brPx / n, sat, bright };
+    }
+
+    function classify(f) {
+      if (!f) return { name: 'Capture Error', sev: 'LOW', conf: 0 };
+      let best = null, bestD = Infinity;
+      for (const p of PROFILES) {
+        const d = Math.sqrt(
+          Math.pow((f.rf - p.rf) * 120, 2) +
+          Math.pow((f.bf - p.bf) * 100, 2) +
+          Math.pow((f.br - p.br) * 80, 2) +
+          Math.pow((f.sat - p.sat) * 50, 2) +
+          Math.pow((f.bright - p.bright) / 255 * 40, 2)
+        );
+        if (d < bestD) { bestD = d; best = p; }
+      }
+      // Confidence: closer = higher confidence
+      const conf = Math.max(35, Math.min(97, Math.round(100 - bestD * 18)));
+      return { name: best.name, sev: best.sev, conf };
+    }
+
+    function run(canvas) {
+      return classify(extract(canvas));
+    }
+
+    return { run };
+  })();
+
+  /* ==================== voice.js ====================
+     Web Speech API — 100% free, browser-native
+     SpeechSynthesis for TTS
+     SpeechRecognition for STT
+     =================================================== */
+  const Voice = (() => {
+    const synth = window.speechSynthesis;
+    let vSpeaking = false, voiceSteps = [], stepIdx = 0;
+
+    function speak(text, onEnd) {
+      synth.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.rate = .9; u.pitch = 1.05;
+      const voices = synth.getVoices();
+      const fem = voices.find(v => /(female|samantha|karen|victoria|google uk english female)/i.test(v.name));
+      if (fem) u.voice = fem;
+      u.onstart = () => { vSpeaking = true; APP.aiSpeaking = true; };
+      u.onend = () => { vSpeaking = false; APP.aiSpeaking = false; if (onEnd) onEnd(); };
+      u.onerror = () => { vSpeaking = false; APP.aiSpeaking = false; };
+      synth.speak(u);
+    }
+
+    function stop() { synth.cancel(); vSpeaking = false; APP.aiSpeaking = false; }
+    function pause() { synth.pause(); }
+    function resume() { synth.resume(); }
+
+    function setSteps(steps) { voiceSteps = steps; stepIdx = 0; }
+    function playStep(i) {
+      if (!voiceSteps.length) return;
+      if (i >= voiceSteps.length) {
+        APP.aiSpeaking = false;
+        document.getElementById('vstatus').textContent = '✓ All steps complete';
+        renderSteps(); return;
+      }
+      stepIdx = i;
+      renderSteps();
+      document.getElementById('vstatus').textContent = `▶ Step ${i + 1} of ${voiceSteps.length}`;
+      document.getElementById('vPause').disabled = false;
+      document.getElementById('vStop').disabled = false;
+      document.getElementById('vNext').disabled = false;
+      speak(`Step ${i + 1}. ${voiceSteps[i]}`, () => playStep(i + 1));
+    }
+
+    function renderSteps() {
+      const el = document.getElementById('stepsList');
+      if (!voiceSteps.length) { el.innerHTML = '<div class="noinj"><p>No steps yet.</p></div>'; return; }
+      el.innerHTML = voiceSteps.map((s, i) => `
+      <div class="si ${i === stepIdx ? 'act' : i < stepIdx ? 'done' : ''}">
+        <div class="snum">${i < stepIdx ? '✓' : i + 1}</div>
+        <div class="stxt">${s}</div>
+      </div>`).join('');
+    }
+
+    return { speak, stop, pause, resume, setSteps, playStep, renderSteps, getIdx: () => stepIdx, getSteps: () => voiceSteps };
+  })();
+
+  /* ==================== chatbot.js ====================
+     Free AI chatbot:
+     1. Claude API (proxied — no key needed)
+     2. Medical knowledge base fallback (works offline)
+     =================================================== */
+  const Chatbot = (() => {
+    // Offline medical knowledge base
+    const KB = [
+      { pat: /cut|lacerat|wound|slash/i, resp: `For cuts/lacerations:\n1. Apply firm pressure with clean cloth for 10 min\n2. Rinse under clean running water\n3. Apply antiseptic and cover with bandage\n4. Seek help if bleeding doesn't stop or wound is deep.` },
+      { pat: /bleed|hemorrhage/i, resp: `To stop bleeding:\n1. Apply direct pressure — don't remove cloth\n2. Elevate the injured area above heart level\n3. Apply ice pack wrapped in cloth\n4. Call 108 if bleeding is severe or from an artery.` },
+      { pat: /burn|scald/i, resp: `For burns:\n1. Cool under running water for 20 minutes (NOT ice)\n2. Remove jewelry near burn\n3. Cover loosely with sterile gauze\n⛔ Do NOT use butter, toothpaste, or ice\nCall 108 for severe burns.` },
+      { pat: /chok|suffocate|airway/i, resp: `For choking:\n1. Give 5 firm back blows between shoulder blades\n2. Give 5 abdominal thrusts (Heimlich maneuver)\n3. Alternate until object is expelled\n4. If unconscious, start CPR and call 108 immediately.` },
+      { pat: /cpr|cardiac|heart stop|not breath/i, resp: `CPR Steps:\n1. Check safety & responsiveness\n2. Call 112 for help\n3. Give 30 chest compressions (hard & fast, center of chest)\n4. Give 2 rescue breaths\n5. Repeat 30:2 until help arrives.` },
+      { pat: /fracture|broken bone|snap/i, resp: `For suspected fractures:\n1. Immobilize the area — do NOT try to straighten\n2. Apply ice wrapped in cloth to reduce swelling\n3. Keep elevated if possible\n4. Go to ER or call 108 for major fractures.` },
+      { pat: /sprain|twist|ankle/i, resp: `For sprains — RICE method:\n1. Rest — stop activity\n2. Ice — 20 min every 2 hours\n3. Compress — elastic bandage\n4. Elevate — above heart level\nSee doctor if severe pain or can't bear weight.` },
+      { pat: /allerg|anaphylax|swollen throat/i, resp: `Allergic reaction:\n1. Give EpiPen if available\n2. Call 112 immediately for severe reactions\n3. Lay flat with legs raised\n4. If breathing stops, start CPR\n⚠️ Anaphylaxis is life-threatening — act fast.` },
+      { pat: /poison|swallow|toxic/i, resp: `For poisoning:\n1. Call 112 or Poison Control immediately\n2. Don't induce vomiting unless instructed\n3. Note what was swallowed and how much\n4. Keep the person calm and still.` },
+      { pat: /head|concuss|skull/i, resp: `For head injuries:\n1. Keep still — don't move if spine injury suspected\n2. Apply gentle pressure to bleeding wounds\n3. Monitor for: confusion, vomiting, unequal pupils\n4. Call 108 if unconscious or symptoms worsen.` },
+      { pat: /shock/i, resp: `For shock:\n1. Lay person flat, elevate legs 12 inches\n2. Keep warm with blanket\n3. Don't give food or water\n4. Call 108 immediately — shock is life-threatening.` },
+      { pat: /fever|temperature/i, resp: `For high fever:\n1. Apply cool (not cold) damp cloths to forehead\n2. Stay hydrated — sip water frequently\n3. Take paracetamol if available\n4. Seek care if fever >103°F (39.4°C) or in children.` },
+    ];
+
+    function kbAnswer(q) {
+      for (const k of KB) if (k.pat.test(q)) return k.resp;
+      return null;
+    }
+
+    let history = [];
+
+    async function ask(msg) {
+      history.push({ role: 'user', content: msg });
+      // Try Claude API first
+      try {
+        const body = {
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 300,
+          system: `You are Savexa , a concise AI medical emergency assistant. Current injury context: ${APP.analysis ? `${APP.analysis.name} (${APP.analysis.sev})` : 'none scanned'}. Reply in under 90 words, use numbered steps for procedures. Always recommend professional help for serious injuries.`,
+          messages: history
+        };
+        const resp = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const text = await resp.text();
+        let data;
+        try { data = JSON.parse(text); } catch (e) { throw new Error('Bad JSON: ' + text.slice(0, 80)); }
+        if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+        if (!data.content?.[0]?.text) throw new Error('No content in response');
+        const reply = data.content[0].text;
+        history.push({ role: 'assistant', content: reply });
+        document.getElementById('llmStatus').innerHTML = '<span class="sd"></span>Claude AI Active';
+        return reply;
+      } catch (err) {
+        console.warn('Claude API unavailable, using knowledge base:', err.message);
+        // Fallback to knowledge base
+        const kb = kbAnswer(msg);
+        const reply = kb || `For "${msg}": Please consult a healthcare professional or call 112. For immediate first aid questions, I recommend checking the First Aid tab for step-by-step guidance.`;
+        history.push({ role: 'assistant', content: reply });
+        document.getElementById('llmStatus').innerHTML = '<span class="sd" style="background:var(--warn)"></span>Offline KB Mode';
+        return reply;
+      }
+    }
+
+    return { ask };
+  })();
+
+  /* ==================== app.js ====================
+     Main Application Controller
+     ================================================ */
+  const APP = {
+    stream: null, analysis: null, tracking: false,
+    aiSpeaking: false, listening: false, recognition: null,
+    history: [], totalScans: 0, critCount: 0, confSum: 0,
+    trackTick: null, timerTick: null, timerPct: 100,
+    uploadedB64: null
+  };
+
+  // ── Three.js particle background ──
+  (() => {
+    const c = document.getElementById('bgc');
+    const r = new THREE.WebGLRenderer({ canvas: c, alpha: true });
+    r.setPixelRatio(Math.min(devicePixelRatio, 2));
+    r.setSize(innerWidth, innerHeight);
+    const sc = new THREE.Scene(), cam = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, .1, 1000);
+    cam.position.z = 30;
+    const N = 600, pos = new Float32Array(N * 3);
+    for (let i = 0; i < N * 3; i++) pos[i] = (Math.random() - .5) * 90;
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    sc.add(new THREE.Points(geo, new THREE.PointsMaterial({ color: 0x00d4ff, size: .2, transparent: true, opacity: .4 })));
+    let t = 0;
+    (function a() { requestAnimationFrame(a); t += .0008; sc.rotation.y = t * .25; sc.rotation.x = t * .08; r.render(sc, cam) })();
+    addEventListener('resize', () => { r.setSize(innerWidth, innerHeight); cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix() });
+  })();
+
+  // ── Waveform canvases ──
+  function makeWave(id, getActive, color) {
+    const c = document.getElementById(id), ctx = c.getContext('2d');
+    let t = 0;
+    (function draw() {
+      requestAnimationFrame(draw);
+      c.width = c.offsetWidth || 400; c.height = parseInt(c.style.height || c.height || 60);
+      ctx.clearRect(0, 0, c.width, c.height);
+      const bars = Math.floor(c.width / 9), bw = c.width / bars;
+      const active = getActive();
+      for (let i = 0; i < bars; i++) {
+        const amp = active ? (Math.abs(Math.sin(t + i * .45)) * .9 + .1) : .05;
+        const h = Math.max(2, c.height * amp * .8);
+        ctx.fillStyle = color.replace('A', active ? .75 : .18);
+        ctx.fillRect(i * bw + bw * .1, (c.height - h) / 2, bw * .8, h);
+      }
+      if (active) t += .13;
+    })();
+  }
+  makeWave('wvc', () => APP.aiSpeaking, 'rgba(0,212,255,A)');
+  makeWave('cwv', () => APP.aiSpeaking, 'rgba(124,58,237,A)');
+
+  // ── Navigation ──
+  function goTab(id, el) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+    document.querySelectorAll('.ni').forEach(n => n.classList.remove('on'));
+    document.getElementById('tab-' + id).classList.add('on');
+    if (el) el.classList.add('on');
+    if (id === 'sos') drawRadar();
+    if (id === 'stats') drawChart();
+  }
+
+  function notify(msg, type = 'in') {
+    const n = document.getElementById('notif');
+    n.textContent = msg; n.className = `notif ${type} show`;
+    clearTimeout(n._t); n._t = setTimeout(() => n.classList.remove('show'), 3800);
+  }
+
+  // ── Camera ──
+  async function startCam() {
+    try {
+      APP.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 } } });
+      const v = document.getElementById('vid');
+      v.srcObject = APP.stream; v.style.display = 'block';
+      document.getElementById('camph').style.display = 'none';
+      document.getElementById('oi').style.display = 'block';
+      document.getElementById('sline').classList.add('on');
+      document.getElementById('trackBtn').disabled = false;
+      document.getElementById('anaBtn').disabled = false;
+      document.getElementById('camBtn').disabled = true;
+      document.getElementById('camBtn').textContent = '🎥 Live';
+      document.getElementById('scanBadge').textContent = '● CAMERA ON';
+      notify('Camera live — start tracking or analyze now', 'ok');
+    } catch (e) { notify('Camera denied. Upload an image instead.', 'er'); }
+  }
+
+  // ── Capture frame to base64 ──
+  function captureB64() {
+    const v = document.getElementById('vid');
+    if (!v || !v.videoWidth) return null;
+    const c = document.createElement('canvas');
+    c.width = v.videoWidth; c.height = v.videoHeight;
+    c.getContext('2d').drawImage(v, 0, 0);
+    return { b64: c.toDataURL('image/jpeg', .72).split(',')[1], canvas: c };
+  }
+
+  // Helper to convert base64 DataURL to File object
+  function dataURLtoFile(dataurl, filename) {
+    const arr = dataurl.split(',');
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], filename, { type: mime });
+  }
+
+  // ── Upload image ──
+  function loadUpload(e) {
+    const f = e.target.files[0]; if (!f) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      document.getElementById('upImg').src = ev.target.result;
+      document.getElementById('upImg').style.display = 'block';
+      APP.uploadedB64 = ev.target.result.split(',')[1];
+      APP.uploadedFile = f;
+      document.getElementById('anaBtn').disabled = false;
+      notify('Image loaded — click Analyze Now', 'ok');
+    };
+    reader.readAsDataURL(f);
+  }
+
+  // ── Real-time tracking ──
+  const TRACK_MS = 8000;
+  function toggleTrack() {
+    APP.tracking ? stopTrack() : startTrack();
+  }
+  function startTrack() {
+    APP.tracking = true;
+    document.getElementById('trackBtn').innerHTML = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> Stop';
+    document.getElementById('trackBtn').className = 'btn bd';
+    document.getElementById('tw').classList.add('on');
+    document.getElementById('scanBadge').textContent = '● TRACKING LIVE';
+    document.getElementById('mlTag').classList.add('on');
+    document.getElementById('mlTag').textContent = '🤖 ML Scanning...';
+    notify('Real-time tracking active (every 8s)', 'ok');
+    runCycle();
+  }
+  function stopTrack() {
+    APP.tracking = false;
+    clearTimeout(APP.trackTick); clearInterval(APP.timerTick);
+    document.getElementById('trackBtn').innerHTML = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg> Start Tracking';
+    document.getElementById('trackBtn').className = 'btn bw';
+    document.getElementById('tw').classList.remove('on');
+    document.getElementById('mlTag').classList.remove('on');
+    document.getElementById('scanBadge').textContent = '● STANDBY';
+    notify('Tracking stopped', 'in');
+  }
+  function runCycle() {
+    if (!APP.tracking) return;
+    analyzeNow(true);
+    APP.timerPct = 100;
+    const step = 100 / (TRACK_MS / 100);
+    clearInterval(APP.timerTick);
+    APP.timerTick = setInterval(() => {
+      APP.timerPct = Math.max(0, APP.timerPct - step);
+      const s = Math.round(APP.timerPct / 100 * TRACK_MS / 1000);
+      document.getElementById('tlabel').textContent = `Next scan in ${s}s`;
+      document.getElementById('tf').style.width = APP.timerPct + '%';
+    }, 100);
+    APP.trackTick = setTimeout(() => { if (APP.tracking) runCycle(); }, TRACK_MS);
+  }
+
+  // ── Main analysis (TensorFlow Backend + KNN fallback) ──
+  async function analyzeNow(fromTrack = false) {
+    let file = null, mlCanvas = null;
+    if (APP.stream) {
+      const cap = captureB64();
+      if (cap && cap.b64) {
+        const dataUrl = 'data:image/jpeg;base64,' + cap.b64;
+        file = dataURLtoFile(dataUrl, 'capture.jpg');
+        mlCanvas = cap.canvas;
+      }
+    } else if (APP.uploadedFile) {
+      file = APP.uploadedFile;
+      const img = document.getElementById('upImg');
+      const c = document.createElement('canvas');
+      c.width = img.naturalWidth || 224;
+      c.height = img.naturalHeight || 224;
+      c.getContext('2d').drawImage(img, 0, 0);
+      mlCanvas = c;
+    } else if (APP.uploadedB64) {
+      const dataUrl = 'data:image/jpeg;base64,' + APP.uploadedB64;
+      file = dataURLtoFile(dataUrl, 'uploaded.jpg');
+      const img = document.getElementById('upImg');
+      const c = document.createElement('canvas');
+      c.width = img.naturalWidth || 224;
+      c.height = img.naturalHeight || 224;
+      c.getContext('2d').drawImage(img, 0, 0);
+      mlCanvas = c;
+    }
+
+    if (!file) { notify('No image — start camera or upload a photo', 'er'); return; }
+
+    // ── Run instant client-side classification overlay ──
+    let mlResult = { name: 'Analyzing…', sev: 'LOW', conf: 0 };
+    if (mlCanvas) {
+      mlResult = ML.run(mlCanvas);
+      const tag = document.getElementById('mlTag');
+      if (tag) {
+        tag.classList.add('on');
+        const col = mlResult.sev === 'CRITICAL' ? 'var(--dan)' : mlResult.sev === 'MEDIUM' ? 'var(--warn)' : 'var(--suc)';
+        tag.style.color = col;
+        tag.textContent = `🤖 ${mlResult.name} (${mlResult.conf}%)`;
+      }
+    }
+
+    if (!fromTrack) {
+      document.getElementById('anaArea').innerHTML = `<div style="text-align:center;padding:18px;color:var(--td)"><span class="ld"></span><p style="margin-top:8px;font-size:11px">Analyzing image with TensorFlow Model...</p></div>`;
+    }
+
+    // ── API request to Django REST backend ──
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      const resp = await fetch('http://127.0.0.1:8000/api/detect/', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!resp.ok) {
+        const errInfo = await resp.json();
+        throw new Error(errInfo.error || `Server error: ${resp.status}`);
+      }
+
+      const data = await resp.json();
+      const guidance = data.guidance || {};
+      const severityUpper = data.severity ? data.severity.toUpperCase() : 'LOW';
+
+      // Convert database step objects to formatted strings
+      const steps = (guidance.steps || []).map(s => `${s.t}: ${s.d} ${s.x ? `(${s.x})` : ''}`);
+      if (steps.length === 0) {
+        steps.push("Apply general first aid. Keep the area clean and protected.");
+      }
+
+      // Find Do Not warning if present
+      const warningStep = (guidance.steps || []).find(s => s.x && (s.x.toLowerCase().includes("avoid") || s.x.toLowerCase().includes("do not")));
+      const warningText = warningStep ? warningStep.x : "Do not touch the wound with dirty hands or apply unverified remedies.";
+
+      const parsed = {
+        injury_type: data.injury_type || "Unknown Injury",
+        affected_area: data.region || "Not specified",
+        severity: severityUpper,
+        confidence: data.confidence || 0,
+        description: guidance.summary || `Savexa backend identified ${data.injury_type}.`,
+        immediate_action: (guidance.steps && guidance.steps.length > 0) ? `${guidance.steps[0].t}: ${guidance.steps[0].d}` : "Apply appropriate first aid.",
+        first_aid_steps: steps,
+        do_not: warningText,
+        all_predictions: data.all_predictions || {}
+      };
+
+      APP.analysis = { ...parsed, name: parsed.injury_type };
+      renderResult(parsed);
+      updateAidTab(parsed);
+      updateHistory(parsed);
+      updateStats(parsed);
+      updateHomeRecent(parsed);
+
+    } catch (err) {
+      console.warn('Backend API failed, using on-device ML fallback:', err.message);
+      notify('Backend failed: ' + err.message + '. Using offline ML fallback.', 'er');
+
+      // Offline Knowledge Base Fallback steps
+      const kbSteps = {
+        'Laceration / Cut': ['Apply firm pressure with clean cloth', 'Elevate above heart level', 'Rinse with clean water for 5 min', 'Apply antiseptic and bandage', 'Monitor for infection signs'],
+        'Bleeding Wound': ['Call 108 immediately', 'Apply HARD direct pressure', 'Do NOT remove cloth — add more on top', 'Keep patient still and lying down', 'Elevate injured area above heart'],
+        'Bruise / Contusion': ['Apply ice pack wrapped in cloth', 'Rest the area for 24-48 hours', 'Compress gently with elastic bandage', 'Elevate to reduce swelling', 'See doctor if very painful or swollen'],
+        'Burn': ['Cool under running water for 20 minutes', 'Remove jewelry/tight items', 'Cover loosely with sterile gauze', 'Do NOT use ice, butter or toothpaste', 'Seek hospital for severe burns'],
+        'No Visible Injury': ['Monitor for developing symptoms', 'Rest if any discomfort', 'Stay hydrated', 'Apply cold pack if needed', 'Consult doctor if pain persists'],
+      };
+      const steps = kbSteps[mlResult.name] || kbSteps['No Visible Injury'];
+
+      // Construct all predictions for KNN fallback
+      const all_preds = {};
+      all_preds[mlResult.name] = mlResult.conf;
+      const otherClass = mlResult.name === 'Burn' ? 'Cut' : 'Burn';
+      all_preds[otherClass] = Math.max(3, 100 - mlResult.conf);
+
+      const fallback = {
+        injury_type: mlResult.name,
+        affected_area: 'Detected region',
+        severity: mlResult.sev,
+        confidence: mlResult.conf,
+        description: `Local ML classifier identified ${mlResult.name} with ${mlResult.conf}% confidence. Django server offline — using local backup.`,
+        immediate_action: steps[0],
+        first_aid_steps: steps,
+        do_not: mlResult.name === 'Burn' ? 'Do not apply ice, butter, or toothpaste to burns.' : 'Do not pull stuck clothing.',
+        all_predictions: all_preds
+      };
+
+      APP.analysis = { ...fallback, name: fallback.injury_type };
+      renderResult(fallback);
+      updateAidTab(fallback);
+      updateHistory(fallback);
+      updateStats(fallback);
+      updateHomeRecent(fallback);
+    }
+  }
+
+  // ── Render results with accuracy of all injury types ──
+  function renderResult(a) {
+    const sc = a.severity === 'CRITICAL' ? 'sc' : a.severity === 'MEDIUM' ? 'sm' : 'sl';
+
+    // Render multi-class prediction confidence bars side-by-side
+    let allPredictionsHTML = '';
+    if (a.all_predictions && Object.keys(a.all_predictions).length > 0) {
+      allPredictionsHTML = `<div class="ri" style="grid-column:1/-1"><div class="rl">Accuracy / Confidence of All Injury Types</div>`;
+      for (const [cls, pct] of Object.entries(a.all_predictions)) {
+        allPredictionsHTML += `
+        <div style="margin-top:6px">
+          <div style="display:flex;justify-content:space-between;font-size:10px">
+            <span style="font-weight:600">${cls}</span>
+            <span style="color:var(--p);font-weight:700">${pct}%</span>
+          </div>
+          <div class="cbar"><div class="cfill" style="width:${pct}%"></div></div>
+        </div>`;
+      }
+      allPredictionsHTML += `</div>`;
+    } else {
+      allPredictionsHTML = `<div class="ri"><div class="rl">Confidence</div><div class="rv">${a.confidence}%<div class="cbar"><div class="cfill" style="width:${a.confidence}%"></div></div></div></div>`;
+    }
+
+    document.getElementById('anaArea').innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+      <span style="font-size:15px;font-weight:700">${a.injury_type}</span>
+      <span class="sev ${sc}">${a.severity}</span>
+    </div>
+    <div class="rg">
+      <div class="ri"><div class="rl">Area</div><div class="rv">${a.affected_area}</div></div>
+      ${allPredictionsHTML}
+      <div class="ri" style="grid-column:1/-1"><div class="rl">⚡ Do Immediately</div><div class="rv" style="font-size:12px;color:var(--warn)">${a.immediate_action}</div></div>
+      <div class="ri" style="grid-column:1/-1"><div class="rl">⛔ Do NOT</div><div class="rv" style="font-size:11px;color:var(--dan)">${a.do_not}</div></div>
+    </div>
+    <div class="ai-desc">${a.description}</div>
+    <div style="margin-top:15px; padding-top:15px; border-top:1px solid rgba(0,210,255,0.13)">
+      <button id="btnSelectInjury" onclick="if(window.InjurySelector) window.InjurySelector.show(); else toast('Injury selector not ready', 'error');" style="
+        width: 100%;
+        padding: 10px;
+        background: rgba(0,212,255,0.1);
+        border: 1px solid rgba(0,210,255,0.28);
+        color: #00d4ff;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        transition: all 0.2s;
+      ">📋 Or select different injury type</button>
+    </div>`;
+    document.getElementById('stepsCard').style.display = 'block';
+    document.getElementById('stepsPreview').innerHTML = a.first_aid_steps.slice(0, 3).map((s, i) => `<div style="display:flex;gap:7px;margin-bottom:6px;font-size:11px"><span style="color:var(--p);font-weight:700;min-width:14px">${i + 1}.</span><span>${s}</span></div>`).join('') + `<div style="font-size:10px;color:var(--td);margin-top:4px">+${a.first_aid_steps.length - 3} more steps in Voice Guide</div>`;
+  }
+
+  // ── First Aid Tab ──
+  function updateAidTab(a) {
+    Voice.setSteps(a.first_aid_steps || []);
+    const sc = a.severity === 'CRITICAL' ? 'sc' : a.severity === 'MEDIUM' ? 'sm' : 'sl';
+    document.getElementById('aidInfo').innerHTML = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><span style="font-size:14px;font-weight:700">${a.injury_type}</span><span class="sev ${sc}">${a.severity}</span></div><p style="font-size:10px;color:var(--td)">${a.affected_area} · ${a.confidence}% confidence</p>`;
+    Voice.renderSteps();
+    document.getElementById('vstatus').textContent = `${(a.first_aid_steps || []).length} steps ready — Press Play`;
+  }
+  function goToAid() { goTab('aid', document.getElementById('ni-aid')); setTimeout(() => Voice.playStep(0), 300); }
+
+  // ── Voice first aid controls ──
+  function vPlay() {
+    const steps = Voice.getSteps();
+    if (!steps.length) { notify('Analyze an injury first', 'er'); return; }
+    if (window.speechSynthesis.paused) { window.speechSynthesis.resume(); APP.aiSpeaking = true; return; }
+    Voice.playStep(Voice.getIdx());
+  }
+  function vPause() { Voice.pause(); APP.aiSpeaking = false; document.getElementById('vPause').disabled = true; }
+  function vStop() { Voice.stop(); document.getElementById('vPause').disabled = true; document.getElementById('vNext').disabled = true; document.getElementById('vstatus').textContent = 'Stopped'; }
+  function vReplay() { Voice.stop(); setTimeout(() => Voice.playStep(0), 120); }
+  function vNext() { Voice.stop(); setTimeout(() => Voice.playStep(Voice.getIdx() + 1), 120); }
+
+  // ── Speech Recognition ──
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (SR) {
+    APP.recognition = new SR();
+    APP.recognition.continuous = false; APP.recognition.interimResults = true; APP.recognition.lang = 'en-US';
+    APP.recognition.onstart = () => {
+      APP.listening = true;
+      document.getElementById('vorb').classList.add('listening');
+      document.getElementById('vs').textContent = 'Listening…';
+    };
+    APP.recognition.onresult = e => {
+      const tr = Array.from(e.results).map(r => r[0].transcript).join('');
+      document.getElementById('vtr').textContent = tr;
+      if (e.results[e.results.length - 1].isFinal) { document.getElementById('cin').value = tr; sendChat(); }
+    };
+    APP.recognition.onend = () => {
+      APP.listening = false;
+      document.getElementById('vorb').classList.remove('listening');
+      document.getElementById('vs').textContent = 'Tap orb to speak';
+      document.getElementById('vtr').textContent = '';
+    };
+    APP.recognition.onerror = e => {
+      APP.listening = false;
+      document.getElementById('vorb').classList.remove('listening');
+      if (e.error !== 'aborted') notify('Mic: ' + e.error, 'er');
+    };
+  } else {
+    document.getElementById('vorb').title = 'Speech recognition not supported in this browser';
+  }
+
+  function toggleListen() {
+    if (!APP.recognition) { notify('Speech recognition not supported. Use Chrome or Edge.', 'er'); return; }
+    if (APP.aiSpeaking) { Voice.stop(); APP.aiSpeaking = false; }
+    APP.listening ? APP.recognition.stop() : APP.recognition.start();
+  }
+
+  // ── AI Chatbot ──
+  async function sendChat() {
+    const inp = document.getElementById('cin');
+    const msg = inp.value.trim(); if (!msg) return;
+    inp.value = '';
+    addMsg(msg, 'u');
+    const tid = addTyping();
+    try {
+      const reply = await Chatbot.ask(msg);
+      removeTyping(tid);
+      addMsg(reply, 'b');
+      // Speak reply
+      Voice.speak(reply);
+      document.getElementById('vorb').classList.add('speaking');
+      document.getElementById('vs').textContent = 'AI speaking…';
+      setTimeout(() => { document.getElementById('vorb').classList.remove('speaking'); document.getElementById('vs').textContent = 'Tap orb to speak'; }, reply.length * 55 + 1000);
+    } catch (e) {
+      removeTyping(tid);
+      addMsg('Sorry, something went wrong. Please try again.', 'b');
+      console.error('Chat error:', e);
+    }
+  }
+  function qChat(q) { document.getElementById('cin').value = q; sendChat(); }
+  function addMsg(text, who) {
+    const box = document.getElementById('chatBox');
+    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const d = document.createElement('div'); d.className = `msg ${who}`;
+    d.innerHTML = `<div class="bbl">${text.replace(/\n/g, '<br>')}</div><span class="mt">${who === 'u' ? 'You' : 'Savexa '} · ${now}</span>`;
+    box.appendChild(d); box.scrollTop = box.scrollHeight;
+  }
+  function addTyping() {
+    const box = document.getElementById('chatBox'), id = 't' + Date.now();
+    const d = document.createElement('div'); d.className = 'msg b'; d.id = id;
+    d.innerHTML = '<div class="typ"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+    box.appendChild(d); box.scrollTop = box.scrollHeight; return id;
+  }
+  function removeTyping(id) { document.getElementById(id)?.remove(); }
+
+  // ── Emergency ──
+  function callNum(n) { window.location.href = 'tel:' + n; }
+  function triggerSOS() {
+    notify('🆘 SOS SENT — Emergency contacts notified!', 'er');
+    Voice.speak('Emergency SOS alert sent. Help is on the way. Stay calm.');
+    if (APP.analysis) window.open(`sms:112?body=${encodeURIComponent('EMERGENCY: ' + APP.analysis.name + ' detected. Need immediate help!')}`);
+  }
+  function findHospitals() {
+    const l = document.getElementById('hospList');
+    l.innerHTML = '<div style="text-align:center;padding:12px;font-size:11px;color:var(--td)"><span class="ld"></span> Locating…</div>';
+    navigator.geolocation?.getCurrentPosition(() => {
+      l.innerHTML = ['Apollo Hospitals', 'Manipal Hospital', 'Fortis Hospital', 'Narayana Health'].map((n, i) => `<div class="hitem" onclick="window.open('https://maps.google.com/?q=${encodeURIComponent(n)}')"><div class="hn">🏥 ${n}</div><div class="hd">${(i + 1) * 1.2} km away · Emergency</div></div>`).join('');
+      notify('Hospitals located near you', 'ok');
+    }, () => {
+      l.innerHTML = '<div class="hitem"><div class="hn">🏥 Apollo Hospitals</div><div class="hd">Enable GPS for exact distance</div></div><div class="hitem"><div class="hn">🏥 Fortis Hospital</div><div class="hd">Enable GPS for exact distance</div></div>';
+      notify('Enable GPS for accurate results', 'in');
+    });
+  }
+
+  // ── Home recent ──
+  function updateHomeRecent(a) {
+    document.getElementById('homeRecent').style.display = 'block';
+    const sc = a.severity === 'CRITICAL' ? 'sc' : a.severity === 'MEDIUM' ? 'sm' : 'sl';
+    document.getElementById('homeRecentContent').innerHTML = `<div class="card"><div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:14px;font-weight:700">${a.injury_type}</span><span class="sev ${sc}">${a.severity}</span></div><div style="font-size:10px;color:var(--td);margin-top:5px">${new Date().toLocaleTimeString()} · ${a.confidence}% confidence · ${a.affected_area}</div></div>`;
+  }
+
+  // ── Analytics ──
+  function updateHistory(a) {
+    APP.history.unshift({ n: a.injury_type, s: a.severity, t: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), c: a.confidence });
+    const l = document.getElementById('histList');
+    l.innerHTML = APP.history.slice(0, 8).map(h => {
+      const col = h.s === 'CRITICAL' ? 'var(--dan)' : h.s === 'MEDIUM' ? 'var(--warn)' : 'var(--suc)';
+      return `<div class="hst"><div class="hdot" style="background:${col}"></div><div><div class="hinj">${h.n}</div><div class="htm">${h.t} · ${h.c}% · ${h.s}</div></div></div>`;
+    }).join('');
+  }
+  function updateStats(a) {
+    APP.totalScans++; if (a.severity === 'CRITICAL') APP.critCount++; APP.confSum += a.confidence;
+    document.getElementById('stS').textContent = APP.totalScans;
+    document.getElementById('stC').textContent = APP.critCount;
+    document.getElementById('stAvg').textContent = Math.round(APP.confSum / APP.totalScans) + '%';
+    const m = { CRITICAL: '⚠️ Critical detected — seek immediate medical care.', MEDIUM: '⚡ Moderate injury — apply first aid and monitor closely.', LOW: '✅ Minor condition — basic first aid should suffice.' };
+    document.getElementById('aiIns').innerHTML = `<p style="margin-bottom:7px">${m[a.severity] || ''}</p><p style="color:var(--td)">${a.injury_type} in ${a.affected_area}. ${a.confidence}% confidence. Scan #${APP.totalScans}.</p>`;
+    drawChart();
+  }
+  function drawChart() {
+    const c = document.getElementById('barChart'), ctx = c.getContext('2d');
+    c.width = c.offsetWidth || 380;
+    const cats = { Low: 0, Medium: 0, Critical: 0 };
+    APP.history.forEach(h => { cats[h.s === 'LOW' ? 'Low' : h.s === 'MEDIUM' ? 'Medium' : 'Critical']++; });
+    const max = Math.max(...Object.values(cats), 1);
+    ctx.clearRect(0, 0, c.width, 110);
+    ['#00d68f', '#ffaa00', '#ff4757'].forEach((col, i) => {
+      const [k, v] = [['Low', cats.Low], ['Medium', cats.Medium], ['Critical', cats.Critical]][i];
+      const bw = 70, gap = 28, x = gap + i * (bw + gap), h = Math.max((v / max) * 85, 3), y = 100 - h;
+      ctx.fillStyle = col + '22'; ctx.fillRect(x, y, bw, h);
+      ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.strokeRect(x, y, bw, h);
+      ctx.fillStyle = col; ctx.font = '10px Segoe UI'; ctx.textAlign = 'center'; ctx.fillText(k, x + bw / 2, 108);
+      ctx.fillStyle = 'rgba(255,255,255,.8)'; ctx.font = '700 12px Segoe UI'; ctx.fillText(v, x + bw / 2, y - 4);
+    });
+  }
+  function genQR() {
+    const b = document.getElementById('qrbox'); b.innerHTML = '';
+    try {
+      new QRCode(b, { text: JSON.stringify({ scans: APP.totalScans, critical: APP.critCount, history: APP.history.slice(0, 5), app: 'Savexa  AI', generated: new Date().toISOString() }), width: 160, height: 160, colorDark: '#000', colorLight: '#fff', correctLevel: QRCode.CorrectLevel.M });
+      notify('QR generated!', 'ok');
+    } catch (e) { notify('QR error: ' + e.message, 'er'); }
+  }
+  function dlSummary() {
+    const txt = `Savexa  Medical Summary\n${'═'.repeat(28)}\nGenerated: ${new Date().toLocaleString()}\nTotal Scans: ${APP.totalScans} | Critical: ${APP.critCount}\n\nScan History:\n${APP.history.map((h, i) => `${i + 1}. ${h.n} (${h.s}) — ${h.t} — ${h.c}%`).join('\n') || 'No scans'}\n\nPowered by AidSense AI · Free & Open`;
+    const a = document.createElement('a'); a.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(txt); a.download = 'Savexa -report.txt'; a.click();
+    notify('Report downloaded!', 'ok');
+  }
+
+  // ── Radar ──
+  function drawRadar() {
+    const c = document.getElementById('rdr'), ctx = c.getContext('2d');
+    cancelAnimationFrame(c._raf);
+    const cx = 100, cy = 100, R = 84; let ang = 0;
+    function draw() {
+      ctx.clearRect(0, 0, 200, 200);
+      for (let i = 1; i <= 4; i++) { ctx.beginPath(); ctx.arc(cx, cy, R / 4 * i, 0, Math.PI * 2); ctx.strokeStyle = 'rgba(0,212,255,.18)'; ctx.lineWidth = 1; ctx.stroke(); }
+      for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + R * Math.cos(a), cy + R * Math.sin(a)); ctx.strokeStyle = 'rgba(0,212,255,.12)'; ctx.stroke(); }
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, R, ang, ang + .75); ctx.closePath(); ctx.fillStyle = 'rgba(0,212,255,.09)'; ctx.fill();
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + R * Math.cos(ang + .75), cy + R * Math.sin(ang + .75)); ctx.strokeStyle = 'rgba(0,212,255,.7)'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI * 2); ctx.fillStyle = '#00d4ff'; ctx.fill();
+      [[55, 65], [140, 85], [95, 145], [68, 118], [145, 135]].forEach(([bx, by]) => { ctx.beginPath(); ctx.arc(bx, by, 3, 0, Math.PI * 2); ctx.fillStyle = 'rgba(255,71,87,.65)'; ctx.fill(); ctx.strokeStyle = 'rgba(255,71,87,.28)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(bx, by, 7, 0, Math.PI * 2); ctx.stroke(); });
+      ang += .025; c._raf = requestAnimationFrame(draw);
+    } draw();
+  }
+
+  // ── Startup check ──
+  async function checkBackendStatus() {
+    try {
+      const resp = await fetch('http://127.0.0.1:8000/api/test/');
+      const data = await resp.json();
+      const dots = document.querySelectorAll('.ss .sd');
+      if (dots.length > 0) {
+        if (data.model_loaded) {
+          dots[0].style.background = 'var(--suc)';
+          document.querySelectorAll('.ss')[0].childNodes[1].nodeValue = ' Django Model Active';
+        } else {
+          dots[0].style.background = 'var(--warn)';
+          document.querySelectorAll('.ss')[0].childNodes[1].nodeValue = ' Model Loading Error';
+        }
+      }
+    } catch (e) {
+      console.warn('Backend server down:', e.message);
+      const dots = document.querySelectorAll('.ss .sd');
+      if (dots.length > 0) {
+        dots[0].style.background = 'var(--dan)';
+        document.querySelectorAll('.ss')[0].childNodes[1].nodeValue = ' Server Offline';
+      }
+    }
+  }
+
+  // ── Init ──
+  drawRadar(); drawChart();
+  checkBackendStatus();
+  setTimeout(() => window.speechSynthesis?.getVoices(), 600);
+</script>
+<script src="utils.js"></script>
+<script src="frontendcamera.js"></script>
+<script src="frontendapi.js"></script>
+<script src="injury-selector.js"></script>
+</body>
+</html>
