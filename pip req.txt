@@ -1,0 +1,4 @@
+tenser flow
+panda
+numpy
+cv
